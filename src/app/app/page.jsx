@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 // ─── Design tokens — Burnt Calories brand ──────────────────────────────────────
@@ -325,21 +325,28 @@ function CatBadge({cat}) {
 // ─── Recipe card ────────────────────────────────────────────────────────────────
 function RecipeCard({recipe,onSelect,selected}) {
   const m=recipeTotals(recipe);
+  const hasPhoto=!!recipe.photo_url;
   return (
-    <div onClick={()=>onSelect(recipe)} style={{...crd,cursor:"pointer",transition:"border-color 0.15s,transform 0.15s",border:selected?`2px solid ${tk.teal}`:tk.bd}}
+    <div onClick={()=>onSelect(recipe)} style={{...crd,padding:0,overflow:"hidden",cursor:"pointer",transition:"border-color 0.15s,transform 0.15s",border:selected?`2px solid ${tk.teal}`:tk.bd}}
       onMouseEnter={e=>{if(!selected){e.currentTarget.style.borderColor="var(--color-border-secondary)";e.currentTarget.style.transform="translateY(-1px)";}}}
       onMouseLeave={e=>{if(!selected){e.currentTarget.style.borderColor="var(--color-border-tertiary)";e.currentTarget.style.transform="";}}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-        <span style={{fontSize:26}}>{recipe.emoji}</span>
-        <span style={{fontSize:10,color:"var(--color-text-tertiary)",padding:"2px 8px",background:"var(--color-background-secondary)",borderRadius:20}}>{recipe.cat}</span>
-      </div>
-      <div style={{fontSize:13,fontWeight:500,lineHeight:1.3,marginBottom:4}}>{recipe.name}</div>
-      <div style={{fontSize:11,color:"var(--color-text-secondary)",lineHeight:1.5,marginBottom:10}}>{recipe.desc.slice(0,72)}…</div>
-      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{safeParse(recipe.tags,[]).slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",paddingTop:10,borderTop:tk.bd}}>
-        {[["kcal",m.cal,tk.teal],["P",m.p+"g",tk.blue],["C",m.c+"g",tk.green],["F",m.f+"g",tk.coral]].map(([l,v,c])=>(
-          <div key={l} style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:500,color:c}}>{v}</div><div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:2}}>{l}</div></div>
-        ))}
+      {hasPhoto
+        ? <img src={recipe.photo_url} alt={recipe.name} style={{width:"100%",height:120,objectFit:"cover",display:"block"}}/>
+        : <div style={{height:72,display:"flex",alignItems:"center",justifyContent:"center",background:"var(--color-background-secondary)",fontSize:32}}>{recipe.emoji}</div>
+      }
+      <div style={{padding:"14px 16px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          {hasPhoto && <span style={{fontSize:16,marginRight:6}}>{recipe.emoji}</span>}
+          <span style={{fontSize:10,color:"var(--color-text-tertiary)",padding:"2px 8px",background:"var(--color-background-secondary)",borderRadius:20,marginLeft:"auto"}}>{recipe.cat}</span>
+        </div>
+        <div style={{fontSize:13,fontWeight:500,lineHeight:1.3,marginBottom:4}}>{recipe.name}</div>
+        <div style={{fontSize:11,color:"var(--color-text-secondary)",lineHeight:1.5,marginBottom:10}}>{recipe.desc.slice(0,72)}…</div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{safeParse(recipe.tags,[]).slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",paddingTop:10,borderTop:tk.bd}}>
+          {[["kcal",m.cal,tk.teal],["P",m.p+"g",tk.blue],["C",m.c+"g",tk.green],["F",m.f+"g",tk.coral]].map(([l,v,c])=>(
+            <div key={l} style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:500,color:c}}>{v}</div><div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:2}}>{l}</div></div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -348,62 +355,66 @@ function RecipeCard({recipe,onSelect,selected}) {
 // ─── Recipe detail ──────────────────────────────────────────────────────────────
 function RecipeDetail({recipe,onClose,onDelete}) {
   if(!recipe) return null;
-  // ings may come from Supabase as a JSON string — parse if needed
-  const ings = typeof recipe.ings === "string" ? JSON.parse(recipe.ings) : (recipe.ings || []);
-  const tags = typeof recipe.tags === "string" ? JSON.parse(recipe.tags) : (recipe.tags || []);
-  const method = typeof recipe.method === "string" ? JSON.parse(recipe.method) : (recipe.method || []);
-  const safeRecipe = {...recipe, ings, tags, method};
+  const ings   = typeof recipe.ings   === 'string' ? JSON.parse(recipe.ings)   : (recipe.ings   || []);
+  const tags   = typeof recipe.tags   === 'string' ? JSON.parse(recipe.tags)   : (recipe.tags   || []);
+  const method = typeof recipe.method === 'string' ? JSON.parse(recipe.method) : (recipe.method || []);
+  const goal   = typeof recipe.goal   === 'string' ? JSON.parse(recipe.goal)   : (recipe.goal   || []);
+  const safeRecipe = {...recipe, ings, tags, method, goal};
   const m=recipeTotals(safeRecipe);
   const resolved=ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
+  const hasPhoto=!!recipe.photo_url;
   return (
-    <div style={{marginTop:16,...crd,borderRadius:tk.rXl}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
-        <div>
-          <span style={{fontSize:32}}>{recipe.emoji}</span>
-          <h2 style={{fontSize:18,fontWeight:500,margin:"8px 0 2px"}}>{recipe.name}</h2>
-          <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{recipe.cat} · {recipe.prep} min prep · {recipe.cook} min cook · serves {recipe.serves}</div>
+    <div style={{marginTop:16,...crd,borderRadius:tk.rXl,padding:0,overflow:"hidden"}}>
+      {hasPhoto && <img src={recipe.photo_url} alt={recipe.name} style={{width:"100%",height:240,objectFit:"cover",display:"block"}}/>}
+      <div style={{padding:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+          <div>
+            {!hasPhoto && <span style={{fontSize:32}}>{recipe.emoji}</span>}
+            <h2 style={{fontSize:18,fontWeight:500,margin:hasPhoto?"0 0 2px":"8px 0 2px"}}>{recipe.name}</h2>
+            <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{recipe.cat} · {recipe.prep} min prep · {recipe.cook} min cook · serves {recipe.serves}</div>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {onDelete&&<button onClick={()=>onDelete(recipe.id)} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,color:tk.red}}>Delete</button>}
+            <button onClick={onClose} style={{padding:"6px 14px",borderRadius:tk.r,cursor:"pointer",fontSize:12}}>Close ✕</button>
+          </div>
         </div>
-        <div style={{display:"flex",gap:8}}>
-          {onDelete&&<button onClick={()=>onDelete(recipe.id)} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,color:tk.red}}>Delete</button>}
-          <button onClick={onClose} style={{padding:"6px 14px",borderRadius:tk.r,cursor:"pointer",fontSize:12}}>Close ✕</button>
-        </div>
-      </div>
-      <p style={{fontSize:13,color:"var(--color-text-secondary)",lineHeight:1.6,marginBottom:16}}>{recipe.desc}</p>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>{tags.map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"16px 12px",marginBottom:24}}>
-        {[["Calories",m.cal,""],["Protein",m.p,"g"],["Carbs",m.c,"g"],["Fat",m.f,"g"],["Fibre",m.fi,"g"]].map(([l,v,u])=>(
-          <div key={l} style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:500}}>{v}{u}</div><div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:3}}>{l}</div></div>
-        ))}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
-        <div>
-          <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Ingredients</h3>
-          {resolved.map((ing,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:tk.bd,fontSize:12}}>
-              <div><span style={{fontWeight:500}}>{ing.name}</span><span style={{color:"var(--color-text-tertiary)",marginLeft:6}}>{ing.amt}g</span></div>
-              <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{Math.round(ing.mx.cal)} kcal · <span style={{color:tk.blue}}>{Math.round(ing.mx.p)}P</span></div>
-            </div>
-          ))}
-          <h3 style={{fontSize:13,fontWeight:500,margin:"20px 0 12px"}}>Method</h3>
-          {method.map((step,i)=>(
-            <div key={i} style={{display:"flex",gap:10,marginBottom:10,fontSize:12}}>
-              <span style={{width:20,height:20,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,flexShrink:0}}>{i+1}</span>
-              <span style={{color:"var(--color-text-secondary)",lineHeight:1.6}}>{step}</span>
-            </div>
+        <p style={{fontSize:13,color:"var(--color-text-secondary)",lineHeight:1.6,marginBottom:16}}>{recipe.desc}</p>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>{tags.map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"16px 12px",marginBottom:24}}>
+          {[["Calories",m.cal,""],["Protein",m.p,"g"],["Carbs",m.c,"g"],["Fat",m.f,"g"],["Fibre",m.fi,"g"]].map(([l,v,u])=>(
+            <div key={l} style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:500}}>{v}{u}</div><div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:3}}>{l}</div></div>
           ))}
         </div>
-        <div>
-          <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Health benefits</h3>
-          {resolved.map((ing,i)=>(
-            <div key={i} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:"10px 12px",marginBottom:8}}>
-              <div style={{fontSize:11,fontWeight:500,marginBottom:6}}>{ing.name}</div>
-              {ing.benefits.slice(0,3).map((b,bi)=>(
-                <div key={bi} style={{fontSize:10,color:"var(--color-text-secondary)",display:"flex",gap:6,marginBottom:3}}>
-                  <span style={{color:tk.teal,flexShrink:0}}>✓</span>{b}
-                </div>
-              ))}
-            </div>
-          ))}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
+          <div>
+            <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Ingredients</h3>
+            {resolved.map((ing,i)=>(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:tk.bd,fontSize:12}}>
+                <div><span style={{fontWeight:500}}>{ing.name}</span><span style={{color:"var(--color-text-tertiary)",marginLeft:6}}>{ing.amt}g</span></div>
+                <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{Math.round(ing.mx.cal)} kcal · <span style={{color:tk.blue}}>{Math.round(ing.mx.p)}P</span></div>
+              </div>
+            ))}
+            <h3 style={{fontSize:13,fontWeight:500,margin:"20px 0 12px"}}>Method</h3>
+            {method.map((step,i)=>(
+              <div key={i} style={{display:"flex",gap:10,marginBottom:10,fontSize:12}}>
+                <span style={{width:20,height:20,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,flexShrink:0}}>{i+1}</span>
+                <span style={{color:"var(--color-text-secondary)",lineHeight:1.6}}>{step}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Health benefits</h3>
+            {resolved.map((ing,i)=>(
+              <div key={i} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:"10px 12px",marginBottom:8}}>
+                <div style={{fontSize:11,fontWeight:500,marginBottom:6}}>{ing.name}</div>
+                {ing.benefits.slice(0,3).map((b,bi)=>(
+                  <div key={bi} style={{fontSize:10,color:"var(--color-text-secondary)",display:"flex",gap:6,marginBottom:3}}>
+                    <span style={{color:tk.teal,flexShrink:0}}>✓</span>{b}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -419,6 +430,11 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
   const [method,setMethod] = useState([""]);
   const [search,setSearch] = useState("");
   const [saved,setSaved] = useState(false);
+  const [photoFile,setPhotoFile] = useState(null);
+  const [photoPreview,setPhotoPreview] = useState(null);
+  const [uploading,setUploading] = useState(false);
+  const [dragOver,setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
   const totals = useMemo(()=>{
     let cal=0,p=0,c=0,f=0,fi=0;
@@ -427,13 +443,30 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
     return {cal:Math.round(cal/s),p:Math.round(p/s),c:Math.round(c/s),f:Math.round(f/s),fi:Math.round(fi/s)};
   },[ings,form.serves]);
 
+  function handlePhoto(file) {
+    if(!file||!file.type.match(/^image\/(jpeg|png)$/)) return;
+    setPhotoFile(file);
+    const reader=new FileReader();
+    reader.onload=e=>setPhotoPreview(e.target.result);
+    reader.readAsDataURL(file);
+  }
   function addIng(ing) {
     if(!ings.find(i=>i.id===ing.id)) setIngs(prev=>[...prev,{id:ing.id,amt:100}]);
     setSearch("");
   }
-  function save() {
+  async function save() {
     if(!form.name||ings.length===0||method.filter(m=>m.trim()).length===0) return;
-    const recipe = {
+    setUploading(true);
+    let photo_url=null;
+    if(photoFile){
+      try {
+        const ext=photoFile.name.split('.').pop().toLowerCase();
+        const path=`${Date.now()}.${ext}`;
+        const {error}=await supabase.storage.from('recipe-images').upload(path,photoFile,{contentType:photoFile.type});
+        if(!error) photo_url=supabase.storage.from('recipe-images').getPublicUrl(path).data.publicUrl;
+      } catch(e){}
+    }
+    const recipe={
       id:Date.now(),
       ...form,
       prep:+form.prep, cook:+form.cook, serves:+form.serves,
@@ -441,91 +474,115 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
       method:method.filter(m=>m.trim()),
       tags:form.tags.split(",").map(t=>t.trim()).filter(Boolean),
       custom:true,
+      photo_url,
     };
     onSave(recipe);
+    setUploading(false);
     setSaved(true);
     setTimeout(()=>{setSaved(false);onClose();},1200);
   }
 
-  const filtered = search.length>1 ? ingredients.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12) : [];
+  const filtered=search.length>1?ingredients.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12):[];
+  const lbl={fontSize:13,color:"#4A4A4A",display:"block",marginBottom:6,fontWeight:500};
+  const inp={width:"100%",boxSizing:"border-box",padding:"10px 12px",border:"1px solid #cccccc",borderRadius:tk.r,fontSize:13,background:"var(--color-background-primary)",color:"var(--color-text-primary)"};
 
   return (
     <div style={{...crd,borderRadius:tk.rXl,marginTop:16}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-        <h2 style={{fontSize:16,fontWeight:500,margin:0}}>Add new recipe</h2>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+        <h2 style={{fontSize:17,fontWeight:600,margin:0}}>Add new recipe</h2>
         <button onClick={onClose} style={{padding:"6px 14px",borderRadius:tk.r,cursor:"pointer",fontSize:12}}>Cancel ✕</button>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-        {/* LEFT — recipe info */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
+        {/* LEFT — recipe info + photo */}
         <div>
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Recipe name *</label>
-            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Baharat Lamb Bowl" style={{width:"100%",boxSizing:"border-box"}}/>
+          <div style={{marginBottom:14}}>
+            <label style={lbl}>Recipe name *</label>
+            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Baharat Lamb Bowl" style={inp}/>
           </div>
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Description</label>
-            <textarea value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="Short description of the dish…" rows={2} style={{width:"100%",boxSizing:"border-box",resize:"vertical",padding:"8px 10px",borderRadius:tk.r,border:tk.bdMed,background:"var(--color-background-primary)",color:"var(--color-text-primary)",fontSize:13}}/>
+          <div style={{marginBottom:14}}>
+            <label style={lbl}>Description</label>
+            <textarea value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="Short description of the dish…" rows={2} style={{...inp,resize:"vertical"}}/>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
             <div>
-              <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Category</label>
-              <select value={form.cat} onChange={e=>setForm(f=>({...f,cat:e.target.value}))} style={{width:"100%"}}>
+              <label style={lbl}>Category</label>
+              <select value={form.cat} onChange={e=>setForm(f=>({...f,cat:e.target.value}))} style={inp}>
                 {["Breakfast","Lunch","Dinner","Snack"].map(c=><option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Emoji</label>
-              <select value={form.emoji} onChange={e=>setForm(f=>({...f,emoji:e.target.value}))} style={{width:"100%"}}>
+              <label style={lbl}>Emoji</label>
+              <select value={form.emoji} onChange={e=>setForm(f=>({...f,emoji:e.target.value}))} style={inp}>
                 {EMOJIS.map(e=><option key={e} value={e}>{e}</option>)}
               </select>
             </div>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
             {[["Prep (min)","prep"],["Cook (min)","cook"],["Serves","serves"]].map(([l,k])=>(
-              <div key={k}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>{l}</label><input type="number" min={0} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} style={{width:"100%",boxSizing:"border-box"}}/></div>
+              <div key={k}><label style={lbl}>{l}</label><input type="number" min={0} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} style={inp}/></div>
             ))}
           </div>
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Goal tags (checkboxes)</label>
+          <div style={{marginBottom:14}}>
+            <label style={lbl}>Goal tags</label>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {GOALS.map(g=>(
-                <label key={g.id} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",fontSize:12}}>
-                  <input type="checkbox" checked={form.goal.includes(g.id)} onChange={e=>{
-                    setForm(f=>({...f,goal:e.target.checked?[...f.goal,g.id]:f.goal.filter(x=>x!==g.id)}));
-                  }}/>
+                <label key={g.id} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",fontSize:13,color:"#4A4A4A"}}>
+                  <input type="checkbox" checked={form.goal.includes(g.id)} onChange={e=>setForm(f=>({...f,goal:e.target.checked?[...f.goal,g.id]:f.goal.filter(x=>x!==g.id)}))}/>
                   {g.icon} {g.label}
                 </label>
               ))}
             </div>
           </div>
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Tags (comma separated)</label>
-            <input value={form.tags} onChange={e=>setForm(f=>({...f,tags:e.target.value}))} placeholder="e.g. Middle Eastern, Meal Prep, Low Carb"/>
+          <div style={{marginBottom:14}}>
+            <label style={lbl}>Tags (comma separated)</label>
+            <input value={form.tags} onChange={e=>setForm(f=>({...f,tags:e.target.value}))} placeholder="e.g. Middle Eastern, Meal Prep, Low Carb" style={inp}/>
+          </div>
+          {/* Photo upload */}
+          <div style={{marginBottom:14}}>
+            <label style={lbl}>Recipe photo (JPG or PNG)</label>
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png" style={{display:"none"}} onChange={e=>handlePhoto(e.target.files?.[0])}/>
+            {photoPreview?(
+              <div style={{position:"relative"}}>
+                <img src={photoPreview} alt="preview" style={{width:"100%",height:140,objectFit:"cover",borderRadius:tk.r,display:"block"}}/>
+                <button onClick={()=>{setPhotoFile(null);setPhotoPreview(null);}} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,0.55)",color:"white",border:"none",borderRadius:"50%",width:24,height:24,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>×</button>
+              </div>
+            ):(
+              <div
+                onClick={()=>fileInputRef.current?.click()}
+                onDrop={e=>{e.preventDefault();setDragOver(false);handlePhoto(e.dataTransfer.files?.[0]);}}
+                onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+                onDragLeave={()=>setDragOver(false)}
+                style={{border:`2px dashed ${dragOver?tk.teal:"#cccccc"}`,borderRadius:tk.r,padding:"24px 16px",textAlign:"center",cursor:"pointer",transition:"border-color 0.15s,background 0.15s",background:dragOver?tk.tealSurf:"var(--color-background-secondary)"}}>
+                <div style={{fontSize:24,marginBottom:6}}>📷</div>
+                <div style={{fontSize:13,color:"#4A4A4A",fontWeight:500}}>Click or drag & drop</div>
+                <div style={{fontSize:11,color:"#888",marginTop:3}}>JPG or PNG accepted</div>
+              </div>
+            )}
           </div>
           <div>
-            <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:8}}>Method steps</label>
+            <label style={lbl}>Method steps</label>
             {method.map((step,i)=>(
               <div key={i} style={{display:"flex",gap:8,marginBottom:8,alignItems:"flex-start"}}>
-                <span style={{width:20,height:20,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,flexShrink:0,marginTop:9}}>{i+1}</span>
-                <input value={step} onChange={e=>setMethod(m=>m.map((s,j)=>j===i?e.target.value:s))} placeholder={`Step ${i+1}…`} style={{flex:1}}/>
-                {method.length>1&&<button onClick={()=>setMethod(m=>m.filter((_,j)=>j!==i))} style={{padding:"0 8px",height:36,cursor:"pointer",fontSize:14,color:tk.red}}>×</button>}
+                <span style={{width:22,height:22,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:600,flexShrink:0,marginTop:11}}>{i+1}</span>
+                <input value={step} onChange={e=>setMethod(m=>m.map((s,j)=>j===i?e.target.value:s))} placeholder={`Step ${i+1}…`} style={{...inp,flex:1}}/>
+                {method.length>1&&<button onClick={()=>setMethod(m=>m.filter((_,j)=>j!==i))} style={{padding:"0 8px",height:44,cursor:"pointer",fontSize:14,color:tk.red,border:"none",background:"transparent"}}>×</button>}
               </div>
             ))}
-            <button onClick={()=>setMethod(m=>[...m,""])} style={{fontSize:11,padding:"6px 12px",cursor:"pointer",color:tk.teal,marginTop:2}}>+ Add step</button>
+            <button onClick={()=>setMethod(m=>[...m,""])} style={{fontSize:12,padding:"7px 14px",cursor:"pointer",color:tk.teal,marginTop:4,border:`1px solid ${tk.teal}`,borderRadius:tk.r,background:"transparent",fontWeight:500}}>+ Add step</button>
           </div>
         </div>
 
         {/* RIGHT — ingredients + live macros */}
         <div>
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Search ingredients *</label>
+          <div style={{marginBottom:14}}>
+            <label style={lbl}>Search ingredients *</label>
             <div style={{position:"relative"}}>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Type name or category…" style={{width:"100%",boxSizing:"border-box"}}/>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Type name or category…" style={inp}/>
               {filtered.length>0&&(
-                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"var(--color-background-primary)",border:tk.bd,borderRadius:tk.r,zIndex:10,maxHeight:220,overflowY:"auto",marginTop:4,boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}}>
+                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"var(--color-background-primary)",border:"1px solid #cccccc",borderRadius:tk.r,zIndex:10,maxHeight:220,overflowY:"auto",marginTop:4,boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}}>
                   {filtered.map(ing=>(
-                    <div key={ing.id} onClick={()=>addIng(ing)} style={{padding:"9px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",fontSize:12,alignItems:"center"}}
+                    <div key={ing.id} onClick={()=>addIng(ing)} style={{padding:"10px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",fontSize:12,alignItems:"center"}}
                       onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
                       onMouseLeave={e=>e.currentTarget.style.background=""}>
                       <div><span style={{fontWeight:500}}>{ing.name}</span><span style={{marginLeft:6}}><CatBadge cat={ing.cat}/></span></div>
@@ -538,37 +595,37 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
           </div>
 
           {ings.length>0?(
-            <div style={{border:tk.bd,borderRadius:tk.rLg,overflow:"hidden",marginBottom:12}}>
-              <div style={{padding:"8px 12px",background:"var(--color-background-secondary)",fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.08em",display:"grid",gridTemplateColumns:"1fr 120px auto"}}>
+            <div style={{border:"1px solid #cccccc",borderRadius:tk.rLg,overflow:"hidden",marginBottom:14}}>
+              <div style={{padding:"8px 14px",background:"var(--color-background-secondary)",fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.08em",display:"grid",gridTemplateColumns:"1fr 120px auto"}}>
                 <span>Ingredient</span><span>Amount (g)</span><span></span>
               </div>
               {ings.map((ri,i)=>{
-                const ing=BASE_ING.find(x=>x.id===ri.id);
+                const ing=BASE_ING.find(x=>x.id===ri.id)||ingredients.find(x=>x.id===ri.id);
                 if(!ing) return null;
                 const m=ingMacros(ri);
                 return (
-                  <div key={i} style={{padding:"8px 12px",borderTop:tk.bd,display:"grid",gridTemplateColumns:"1fr 120px auto",alignItems:"center",gap:8}}>
+                  <div key={i} style={{padding:"8px 14px",borderTop:"1px solid #cccccc",display:"grid",gridTemplateColumns:"1fr 120px auto",alignItems:"center",gap:8}}>
                     <div>
                       <div style={{fontSize:12,fontWeight:500}}>{ing.name}</div>
                       <div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{Math.round(m.cal)} kcal · {Math.round(m.p)}g P · {Math.round(m.c)}g C · {Math.round(m.f)}g F</div>
                     </div>
                     <input type="number" min={1} max={1000} value={ri.amt}
                       onChange={e=>setIngs(prev=>prev.map((x,j)=>j===i?{...x,amt:+e.target.value}:x))}
-                      style={{width:"100%",boxSizing:"border-box"}}/>
-                    <button onClick={()=>setIngs(prev=>prev.filter((_,j)=>j!==i))} style={{padding:"0 8px",height:32,cursor:"pointer",fontSize:14,color:tk.red}}>×</button>
+                      style={{...inp}}/>
+                    <button onClick={()=>setIngs(prev=>prev.filter((_,j)=>j!==i))} style={{padding:"0 8px",height:44,cursor:"pointer",fontSize:14,color:tk.red,border:"none",background:"transparent"}}>×</button>
                   </div>
                 );
               })}
             </div>
           ):(
-            <div style={{border:`1px dashed var(--color-border-secondary)`,borderRadius:tk.rLg,padding:"24px",textAlign:"center",color:"var(--color-text-tertiary)",fontSize:12,marginBottom:12}}>
+            <div style={{border:"2px dashed #cccccc",borderRadius:tk.rLg,padding:"28px",textAlign:"center",color:"var(--color-text-tertiary)",fontSize:13,marginBottom:14}}>
               Search and click ingredients above to add them here
             </div>
           )}
 
           {/* Live macro preview */}
-          <div style={{background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"14px 12px",marginBottom:16}}>
-            <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:10,fontWeight:500}}>Live macro preview — per serving</div>
+          <div style={{background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"14px 16px",marginBottom:16}}>
+            <div style={{fontSize:12,color:"#4A4A4A",marginBottom:10,fontWeight:600}}>Live macro preview — per serving</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4,textAlign:"center",marginBottom:10}}>
               {[["Cal",totals.cal,tk.teal],["P",totals.p+"g",tk.blue],["C",totals.c+"g",tk.green],["F",totals.f+"g",tk.coral],["Fibre",totals.fi+"g",tk.gray]].map(([l,v,c])=>(
                 <div key={l}><div style={{fontSize:18,fontWeight:500,color:c}}>{v}</div><div style={{fontSize:9,color:"var(--color-text-tertiary)",marginTop:2}}>{l}</div></div>
@@ -583,8 +640,8 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
             )}
           </div>
 
-          <button onClick={save} style={{width:"100%",padding:"12px",background:saved?tk.green:tk.teal,color:"white",borderRadius:tk.rLg,cursor:"pointer",fontSize:14,fontWeight:500,border:"none",transition:"background 0.2s"}}>
-            {saved?"✓ Recipe saved!":"Save recipe"}
+          <button onClick={save} disabled={uploading} style={{width:"100%",padding:"13px",background:saved?tk.green:tk.teal,color:"white",borderRadius:tk.rLg,cursor:uploading?"wait":"pointer",fontSize:14,fontWeight:600,border:"none",transition:"background 0.2s",opacity:uploading?0.75:1}}>
+            {uploading?"Uploading photo…":saved?"✓ Recipe saved!":"Save recipe"}
           </button>
           {(!form.name||ings.length===0)&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",textAlign:"center",marginTop:8}}>Add a name and at least one ingredient to save</div>}
         </div>
