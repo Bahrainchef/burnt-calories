@@ -407,7 +407,7 @@ function RecipeDetail({recipe,onClose,onDelete}) {
 // ─── Recipe Upload Form ─────────────────────────────────────────────────────────
 const EMOJIS = ["🥣","🥗","🍖","🐟","🍳","🥩","🍲","🌾","🥤","🍦","🍱","🥣","🌯","🥞","🍚","🫙","🍝","🥘","🫕","🥙","🌮","🍜","🫐","🍱","🧆"];
 
-function RecipeUploader({onSave,onClose}) {
+function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
   const [form,setForm] = useState({name:"",cat:"Breakfast",goal:["muscle_gain"],prep:10,cook:15,serves:1,emoji:"🥗",desc:"",tags:""});
   const [ings,setIngs] = useState([]);
   const [method,setMethod] = useState([""]);
@@ -441,7 +441,7 @@ function RecipeUploader({onSave,onClose}) {
     setTimeout(()=>{setSaved(false);onClose();},1200);
   }
 
-  const filtered = search.length>1 ? BASE_ING.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12) : [];
+  const filtered = search.length>1 ? ingredients.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12) : [];
 
   return (
     <div style={{...crd,borderRadius:tk.rXl,marginTop:16}}>
@@ -592,6 +592,7 @@ export default function BurntCaloriesApp() {
   const [tab,setTab]   = useState("dashboard");
   const [profile,setProfile] = useState({name:"Paul",gender:"male",age:"40",weight:"90",height:"180",goal:"fat_loss",activityLevel:"very"});
   const [macros,setMacros] = useState(null);
+  const [ingredients,setIngredients] = useState(BASE_ING);
   const [recipes,setRecipes] = useState(SEED_RECIPES);
   const [selRecipe,setSelRecipe] = useState(null);
   const [showUploader,setShowUploader] = useState(false);
@@ -618,10 +619,12 @@ export default function BurntCaloriesApp() {
   useEffect(()=>{
     async function loadDb() {
       try {
-        const [{data:recs,error:re},{data:cls,error:ce}] = await Promise.all([
+        const [{data:ings,error:ie},{data:recs,error:re},{data:cls,error:ce}] = await Promise.all([
+          supabase.from('ingredients').select('*').order('id'),
           supabase.from('recipes').select('*').order('id'),
           supabase.from('clients').select('*').order('id'),
         ]);
+        if(!ie && ings?.length) setIngredients(ings);
         if(!re && recs?.length) setRecipes(recs);
         if(!ce && cls?.length) setClients(cls.map(c=>({...c,activityLevel:c.activity_level})));
       } catch(e){}
@@ -646,14 +649,14 @@ export default function BurntCaloriesApp() {
     return mc&&mg&&mt;
   }),[recipes,recCat,recGoal,recSearch]);
 
-  const ingCats = useMemo(()=>["All",...new Set(BASE_ING.map(i=>i.cat))],[]);
-  const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(BASE_ING.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingCat]);
-  const filteredIngs = useMemo(()=>BASE_ING.filter(i=>{
+  const ingCats = useMemo(()=>["All",...new Set(ingredients.map(i=>i.cat))],[ingredients]);
+  const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(ingredients.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingredients,ingCat]);
+  const filteredIngs = useMemo(()=>ingredients.filter(i=>{
     const mc=ingCat==="All"||i.cat===ingCat;
     const ms=ingSub==="All"||i.sub===ingSub;
     const mt=!ingSearch||i.name.toLowerCase().includes(ingSearch.toLowerCase())||i.sub.toLowerCase().includes(ingSearch.toLowerCase());
     return mc&&ms&&mt;
-  }),[ingCat,ingSub,ingSearch]);
+  }),[ingredients,ingCat,ingSub,ingSearch]);
 
   const builderTotals = useMemo(()=>{
     let cal=0,p=0,c=0,f=0,fi=0;
@@ -848,7 +851,7 @@ export default function BurntCaloriesApp() {
             {showUploader?"Cancel":"+ Add recipe"}
           </button>
         </div>
-        {showUploader&&<RecipeUploader onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
+        {showUploader&&<RecipeUploader ingredients={ingredients} onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
         {!showUploader&&<>
           <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
             <input value={recSearch} onChange={e=>setRecSearch(e.target.value)} placeholder="Search recipes…" style={{flex:1,minWidth:180}}/>
@@ -876,12 +879,12 @@ export default function BurntCaloriesApp() {
       {Nav}{wrap(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
           <div>
-            <Hdr title="Custom meal builder" sub={`Build any meal from ${BASE_ING.length} ingredients and get instant macro breakdown · Burnt Calories`}/>
+            <Hdr title="Custom meal builder" sub={`Build any meal from ${ingredients.length} ingredients and get instant macro breakdown · Burnt Calories`}/>
             <div style={crd}>
               <div style={{marginBottom:14}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Meal name</label><input value={builderName} onChange={e=>setBuilderName(e.target.value)} placeholder="e.g. Post-workout bowl" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{marginBottom:12}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Find ingredient</label><input value={builderSearch} onChange={e=>setBuilderSearch(e.target.value)} placeholder="Type name, category or subcategory…" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{maxHeight:300,overflowY:"auto",border:tk.bd,borderRadius:tk.r}}>
-                {BASE_ING.filter(i=>!builderSearch||i.name.toLowerCase().includes(builderSearch.toLowerCase())||i.sub.toLowerCase().includes(builderSearch.toLowerCase())).slice(0,50).map(ing=>(
+                {ingredients.filter(i=>!builderSearch||i.name.toLowerCase().includes(builderSearch.toLowerCase())||i.sub.toLowerCase().includes(builderSearch.toLowerCase())).slice(0,50).map(ing=>(
                   <div key={ing.id} onClick={()=>{if(!builderIngs.find(b=>b.id===ing.id))setBuilderIngs(b=>[...b,{id:ing.id,amt:100}]);}} style={{padding:"9px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}
                     onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
                     onMouseLeave={e=>e.currentTarget.style.background=""}>
