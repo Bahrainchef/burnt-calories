@@ -3,15 +3,19 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden grain"
-      style={{ background: "linear-gradient(180deg, #0f0e0b 0%, #1a1508 40%, #2c1f06 70%, #3d2a07 100%)" }}
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage: "url('/hero.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center 40%",
+      }}
     >
-      {/* Ambient glow */}
+      {/* Dark gradient overlay: heavy top → clear middle (wheat) → heavy bottom */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 60%, rgba(232,98,26,0.18) 0%, transparent 70%)",
+            "linear-gradient(180deg, rgba(8,6,3,0.88) 0%, rgba(8,6,3,0.45) 30%, rgba(8,6,3,0.20) 52%, rgba(8,6,3,0.60) 75%, rgba(8,6,3,0.92) 100%)",
         }}
       />
 
@@ -40,7 +44,7 @@ export default function Home() {
         <p className="text-lg leading-relaxed mb-12" style={{ color: "#c8b896" }}>
           Personalised macros. 154 ingredients. 55 performance recipes.
           <br />
-          Built around the ZSF protocol.
+          Built for serious performance.
         </p>
 
         {/* Feature pills */}

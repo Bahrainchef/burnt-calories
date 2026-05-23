@@ -301,7 +301,7 @@ function ingMacros({id,amt}) {
 }
 function recipeTotals(recipe) {
   let cal=0,p=0,c=0,f=0,fi=0;
-  const ings = typeof recipe.ings === "string" ? JSON.parse(recipe.ings) : (recipe.ings || []);
+  const ings = safeParse(recipe.ings, []);
   ings.forEach(ri=>{const m=ingMacros(ri);cal+=m.cal;p+=m.p;c+=m.c;f+=m.f;fi+=m.fi;});
   const s=recipe.serves||1;
   return {cal:Math.round(cal/s),p:Math.round(p/s),c:Math.round(c/s),f:Math.round(f/s),fi:Math.round(fi/s)};
@@ -355,10 +355,10 @@ function RecipeCard({recipe,onSelect,selected}) {
 // ─── Recipe detail ──────────────────────────────────────────────────────────────
 function RecipeDetail({recipe,onClose,onDelete}) {
   if(!recipe) return null;
-  const ings   = typeof recipe.ings   === 'string' ? JSON.parse(recipe.ings)   : (recipe.ings   || []);
-  const tags   = typeof recipe.tags   === 'string' ? JSON.parse(recipe.tags)   : (recipe.tags   || []);
-  const method = typeof recipe.method === 'string' ? JSON.parse(recipe.method) : (recipe.method || []);
-  const goal   = typeof recipe.goal   === 'string' ? JSON.parse(recipe.goal)   : (recipe.goal   || []);
+  const ings   = safeParse(recipe.ings,   []);
+  const tags   = safeParse(recipe.tags,   []);
+  const method = safeParse(recipe.method, []);
+  const goal   = safeParse(recipe.goal,   []);
   const safeRecipe = {...recipe, ings, tags, method, goal};
   const m=recipeTotals(safeRecipe);
   const resolved=ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
@@ -688,8 +688,10 @@ export default function BurntCaloriesApp() {
     {id:5,name:"Sara Khalid",   age:31,weight:68, height:162,gender:"female",goal:"maintenance", activityLevel:"very"},
   ]);
   const [selClient,setSelClient] = useState(null);
+  const [clientDraft,setClientDraft] = useState(null);
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
+  useEffect(()=>{ setClientDraft(selClient ? {...selClient} : null); },[selClient?.id]);
 
   useEffect(()=>{
     async function loadDb() {
@@ -715,6 +717,19 @@ export default function BurntCaloriesApp() {
     setRecipes(prev=>prev.filter(r=>r.id!==id));
     if(selRecipe?.id===id) setSelRecipe(null);
     try { await supabase.from('recipes').delete().eq('id',id); } catch(e){}
+  }
+  async function saveClient() {
+    if(!clientDraft) return;
+    const updated={...clientDraft};
+    setClients(prev=>prev.map(c=>c.id===updated.id?updated:c));
+    setSelClient(updated);
+    try {
+      await supabase.from('clients').upsert({
+        id:updated.id, name:updated.name, age:updated.age, weight:updated.weight,
+        height:updated.height, gender:updated.gender, goal:updated.goal,
+        activity_level:updated.activityLevel,
+      },{onConflict:'id'});
+    } catch(e){}
   }
 
   const filteredRecipes = useMemo(()=>recipes.filter(r=>{
@@ -790,33 +805,45 @@ export default function BurntCaloriesApp() {
   const wrap=ch=><div style={{maxWidth:1200,margin:"0 auto",padding:"28px 20px"}}>{ch}</div>;
 
   // ── DASHBOARD ────────────────────────────────────────────────────────────────
-  if(tab==="dashboard") return (
+  if(tab==="dashboard") {
+    const viewingClient = selClient;
+    const dashSubject = viewingClient
+      ? {...viewingClient, age:String(viewingClient.age), weight:String(viewingClient.weight), height:String(viewingClient.height)}
+      : profile;
+    const dashMacros = viewingClient ? calcMacros(dashSubject) : macros;
+    return (
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(<>
-        <Hdr title="Your dashboard" sub={`${ingredients.length} ingredients · ${recipes.length} recipes · personalised for ${profile.name} · Burnt Calories`}/>
-        {macros?(<>
+        {viewingClient&&(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:tk.tealSurf,border:`1px solid ${tk.teal}30`,borderRadius:tk.rLg,padding:"10px 16px",marginBottom:16}}>
+            <span style={{fontSize:13,fontWeight:500,color:tk.tealText}}>👁 Viewing: {viewingClient.name}</span>
+            <button onClick={()=>setSelClient(null)} style={{fontSize:12,color:tk.tealText,cursor:"pointer",border:"none",background:"transparent",fontWeight:500}}>← Back to my dashboard</button>
+          </div>
+        )}
+        <Hdr title={viewingClient?"Client dashboard":"Your dashboard"} sub={`${ingredients.length} ingredients · ${recipes.length} recipes · personalised for ${dashSubject.name} · Burnt Calories`}/>
+        {dashMacros?(<>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(145px,1fr))",gap:10,marginBottom:20}}>
-            <Stat label="Daily calories" value={macros.targetCal} sub="target" color={tk.teal}/>
-            <Stat label="Protein"        value={macros.proteinG+"g"} sub="per day" color={tk.blue}/>
-            <Stat label="Carbohydrate"   value={macros.carbG+"g"} sub="per day" color={tk.green}/>
-            <Stat label="Dietary fat"    value={macros.fatG+"g"} sub="per day" color={tk.coral}/>
-            <Stat label="BMR"            value={macros.bmr} sub="at rest" color={tk.amber}/>
-            <Stat label="TDEE"           value={macros.tdee} sub="maintenance" color={tk.purple}/>
+            <Stat label="Daily calories" value={dashMacros.targetCal} sub="target" color={tk.teal}/>
+            <Stat label="Protein"        value={dashMacros.proteinG+"g"} sub="per day" color={tk.blue}/>
+            <Stat label="Carbohydrate"   value={dashMacros.carbG+"g"} sub="per day" color={tk.green}/>
+            <Stat label="Dietary fat"    value={dashMacros.fatG+"g"} sub="per day" color={tk.coral}/>
+            <Stat label="BMR"            value={dashMacros.bmr} sub="at rest" color={tk.amber}/>
+            <Stat label="TDEE"           value={dashMacros.tdee} sub="maintenance" color={tk.purple}/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:16,marginBottom:20}}>
             <div style={crd}>
               <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 16px"}}>Macro distribution</h2>
-              {[{label:"Protein",g:macros.proteinG,kcal:macros.proteinG*4,color:tk.blue},{label:"Carbohydrate",g:macros.carbG,kcal:macros.carbG*4,color:tk.green},{label:"Fat",g:macros.fatG,kcal:macros.fatG*9,color:tk.coral}].map(m=>(
+              {[{label:"Protein",g:dashMacros.proteinG,kcal:dashMacros.proteinG*4,color:tk.blue},{label:"Carbohydrate",g:dashMacros.carbG,kcal:dashMacros.carbG*4,color:tk.green},{label:"Fat",g:dashMacros.fatG,kcal:dashMacros.fatG*9,color:tk.coral}].map(m=>(
                 <div key={m.label} style={{marginBottom:12}}>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span>{m.label}</span><span style={{color:"var(--color-text-secondary)"}}>{m.g}g · {m.kcal} kcal · {Math.round(m.kcal/macros.targetCal*100)}%</span></div>
-                  <div style={{height:4,background:"var(--color-background-secondary)",borderRadius:2}}><div style={{width:Math.round(m.kcal/macros.targetCal*100)+"%",height:"100%",background:m.color,borderRadius:2}}/></div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span>{m.label}</span><span style={{color:"var(--color-text-secondary)"}}>{m.g}g · {m.kcal} kcal · {Math.round(m.kcal/dashMacros.targetCal*100)}%</span></div>
+                  <div style={{height:4,background:"var(--color-background-secondary)",borderRadius:2}}><div style={{width:Math.round(m.kcal/dashMacros.targetCal*100)+"%",height:"100%",background:m.color,borderRadius:2}}/></div>
                 </div>
               ))}
             </div>
             <div style={crd}>
               <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 14px"}}>Active goal</h2>
-              {(()=>{const g=GOALS.find(x=>x.id===profile.goal);const desc={fat_loss:"−400 kcal deficit · high protein to preserve lean mass · low-GI carbs.",muscle_gain:"+400 kcal surplus · progressive overload · complex carbs around workouts.",longevity:"+100 kcal · anti-inflammatory foods · omega-3 rich · antioxidant-dense.",maintenance:"Balanced macros at TDEE · flexible eating · high food quality."};return(
-                <div><div style={{fontSize:26,marginBottom:8}}>{g.icon}</div><div style={{fontSize:14,fontWeight:500,marginBottom:6}}>{g.label}</div><p style={{fontSize:12,color:"var(--color-text-secondary)",lineHeight:1.6,margin:"0 0 12px"}}>{desc[profile.goal]}</p><div style={{padding:"8px 10px",background:"var(--color-background-secondary)",borderRadius:tk.r,fontSize:11,color:"var(--color-text-secondary)"}}>{Math.round(macros.proteinG/+profile.weight*10)/10}g protein/kg · {macros.targetCal-macros.tdee>0?"+":""}{macros.targetCal-macros.tdee} kcal vs TDEE</div></div>
+              {(()=>{const g=GOALS.find(x=>x.id===dashSubject.goal);const desc={fat_loss:"−400 kcal deficit · high protein to preserve lean mass · low-GI carbs.",muscle_gain:"+400 kcal surplus · progressive overload · complex carbs around workouts.",longevity:"+100 kcal · anti-inflammatory foods · omega-3 rich · antioxidant-dense.",maintenance:"Balanced macros at TDEE · flexible eating · high food quality."};return(
+                <div><div style={{fontSize:26,marginBottom:8}}>{g?.icon}</div><div style={{fontSize:14,fontWeight:500,marginBottom:6}}>{g?.label}</div><p style={{fontSize:12,color:"var(--color-text-secondary)",lineHeight:1.6,margin:"0 0 12px"}}>{desc[dashSubject.goal]}</p><div style={{padding:"8px 10px",background:"var(--color-background-secondary)",borderRadius:tk.r,fontSize:11,color:"var(--color-text-secondary)"}}>{Math.round(dashMacros.proteinG/+dashSubject.weight*10)/10}g protein/kg · {dashMacros.targetCal-dashMacros.tdee>0?"+":""}{dashMacros.targetCal-dashMacros.tdee} kcal vs TDEE</div></div>
               );})()}
             </div>
           </div>
@@ -828,7 +855,7 @@ export default function BurntCaloriesApp() {
                   <div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:3}}>{m.time}</div>
                   <div style={{fontSize:11,fontWeight:500,lineHeight:1.3,marginBottom:4}}>{m.label}</div>
                   <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:8}}>{m.desc}</div>
-                  <div style={{fontSize:14,fontWeight:500,color:tk.teal}}>{Math.round(macros.targetCal*m.pct)} kcal</div>
+                  <div style={{fontSize:14,fontWeight:500,color:tk.teal}}>{Math.round(dashMacros.targetCal*m.pct)} kcal</div>
                 </div>
               ))}
             </div>
@@ -842,7 +869,7 @@ export default function BurntCaloriesApp() {
         )}
       </>)}
     </div>
-  );
+  );};
 
   // ── CALCULATOR ───────────────────────────────────────────────────────────────
   if(tab==="calculator") return (
@@ -1073,25 +1100,80 @@ export default function BurntCaloriesApp() {
               <button onClick={()=>{const nc={id:Date.now(),name:"New client",age:30,weight:75,height:175,gender:"male",goal:"fat_loss",activityLevel:"moderate"};setClients(cs=>[...cs,nc]);setSelClient(nc);}} style={{padding:12,border:"0.5px dashed var(--color-border-secondary)",borderRadius:tk.rLg,cursor:"pointer",fontSize:12,color:"var(--color-text-secondary)",background:"transparent"}}>+ Add new client</button>
             </div>
           </div>
-          {selClient&&(()=>{
-            const cm=calcMacros({...selClient,age:String(selClient.age),weight:String(selClient.weight),height:String(selClient.height)});
+          {selClient&&clientDraft&&(()=>{
+            const cm=calcMacros({...clientDraft,age:String(clientDraft.age),weight:String(clientDraft.weight),height:String(clientDraft.height)});
+            const inp2={width:"100%",boxSizing:"border-box",padding:"9px 12px",border:"1px solid #cccccc",borderRadius:tk.r,fontSize:13,background:"var(--color-background-primary)",color:"var(--color-text-primary)"};
+            const lbl2={fontSize:12,color:"#4A4A4A",display:"block",marginBottom:5,fontWeight:500};
             return (
-              <div>
+              <div style={{display:"flex",flexDirection:"column",gap:16}}>
                 <div style={crd}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
-                    <div><h2 style={{fontSize:18,fontWeight:500,margin:0}}>{selClient.name}</h2><div style={{fontSize:12,color:"var(--color-text-secondary)",marginTop:4}}>{selClient.age}y · {selClient.weight}kg · {selClient.height}cm · {selClient.gender}</div></div>
-                    {cm&&<Pill text={`${cm.targetCal} kcal/day`} color={tk.tealText} bg={tk.tealSurf}/>}
+                  {/* Header */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+                    <div>
+                      <h2 style={{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"var(--color-text-primary)"}}>{clientDraft.name}</h2>
+                      {cm&&<Pill text={`${cm.targetCal} kcal/day`} color={tk.tealText} bg={tk.tealSurf}/>}
+                    </div>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <button onClick={()=>setTab("dashboard")} style={{fontSize:12,padding:"7px 14px",borderRadius:tk.r,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>View dashboard</button>
+                      <button onClick={saveClient} style={{fontSize:13,padding:"9px 20px",borderRadius:tk.rLg,cursor:"pointer",border:"none",background:tk.teal,color:"white",fontWeight:600}}>Save</button>
+                    </div>
                   </div>
+                  {/* Macro stats */}
                   {cm&&(
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:24}}>
-                      {[["BMR",cm.bmr],["TDEE",cm.tdee],["Target",cm.targetCal],["Protein",cm.proteinG+"g"],["Carbs",cm.carbG+"g"]].map(([l,v])=>(
-                        <div key={l} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:12,textAlign:"center"}}><div style={{fontSize:15,fontWeight:500}}>{v}</div><div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:2}}>{l}</div></div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:20}}>
+                      {[["BMR",cm.bmr,"kcal"],["TDEE",cm.tdee,"kcal"],["Target",cm.targetCal,"kcal"],["Protein",cm.proteinG,"g"],["Fat",cm.fatG,"g"]].map(([l,v,u])=>(
+                        <div key={l} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:10,textAlign:"center"}}><div style={{fontSize:15,fontWeight:600}}>{v}{u}</div><div style={{fontSize:9,color:"var(--color-text-secondary)",marginTop:2,textTransform:"uppercase",letterSpacing:"0.06em"}}>{l}</div></div>
                       ))}
                     </div>
                   )}
-                  <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Recommended recipes</h3>
+                  {/* Editable form */}
+                  <h3 style={{fontSize:13,fontWeight:600,marginBottom:14,paddingTop:16,borderTop:tk.bd}}>Client details</h3>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <div style={{gridColumn:"1/-1"}}>
+                      <label style={lbl2}>Full name</label>
+                      <input value={clientDraft.name} onChange={e=>setClientDraft(d=>({...d,name:e.target.value}))} style={inp2}/>
+                    </div>
+                    {[{k:"age",l:"Age (yrs)"},{k:"weight",l:"Weight (kg)"},{k:"height",l:"Height (cm)"}].map(({k,l})=>(
+                      <div key={k}>
+                        <label style={lbl2}>{l}</label>
+                        <input type="number" min={0} value={clientDraft[k]} onChange={e=>setClientDraft(d=>({...d,[k]:+e.target.value}))} style={inp2}/>
+                      </div>
+                    ))}
+                    <div>
+                      <label style={lbl2}>Gender</label>
+                      <div style={{display:"flex",gap:8}}>
+                        {["male","female"].map(g=>(
+                          <button key={g} onClick={()=>setClientDraft(d=>({...d,gender:g}))} style={{flex:1,padding:"9px 0",borderRadius:tk.r,cursor:"pointer",fontSize:13,fontWeight:clientDraft.gender===g?600:400,background:clientDraft.gender===g?tk.teal:"transparent",color:clientDraft.gender===g?"white":"var(--color-text-primary)",border:clientDraft.gender===g?`1px solid ${tk.teal}`:"1px solid #cccccc"}}>
+                            {g==="male"?"♂ Male":"♀ Female"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={lbl2}>Activity level</label>
+                      <select value={clientDraft.activityLevel} onChange={e=>setClientDraft(d=>({...d,activityLevel:e.target.value}))} style={inp2}>
+                        {ACTIVITY.map(a=><option key={a.id} value={a.id}>{a.label} — {a.desc}</option>)}
+                      </select>
+                    </div>
+                    <div style={{gridColumn:"1/-1"}}>
+                      <label style={lbl2}>Primary goal</label>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                        {GOALS.map(g=>(
+                          <button key={g.id} onClick={()=>setClientDraft(d=>({...d,goal:g.id}))} style={{padding:"10px 8px",borderRadius:tk.r,border:clientDraft.goal===g.id?`2px solid ${g.color}`:tk.bd,background:clientDraft.goal===g.id?g.color+"15":"transparent",cursor:"pointer",textAlign:"center",transition:"all 0.15s"}}>
+                            <div style={{fontSize:18,marginBottom:3}}>{g.icon}</div>
+                            <div style={{fontSize:11,fontWeight:clientDraft.goal===g.id?600:400}}>{g.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={saveClient} style={{width:"100%",marginTop:16,padding:"12px",borderRadius:tk.rLg,cursor:"pointer",border:"none",background:tk.teal,color:"white",fontWeight:600,fontSize:14}}>Save client</button>
+                </div>
+                {/* Recommended recipes */}
+                <div style={crd}>
+                  <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Recommended recipes for {clientDraft.name}</h3>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
-                    {recipes.filter(r=>r.goal.includes(selClient.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
+                    {recipes.filter(r=>safeParse(r.goal,[]).includes(clientDraft.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
                   </div>
                   {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)}/>}
                 </div>
