@@ -24,12 +24,12 @@ const CAT_S = { Protein:tk.blueSurf, Dairy:tk.purpleSurf, Carbohydrate:tk.tealSu
 // ─── Master ingredient database ────────────────────────────────────────────────
 const BASE_ING = [
   // PROTEINS — POULTRY
-  {id:1,  name:"Chicken Breast",           cat:"Protein", sub:"Poultry",    ref:100, cal:165, p:31,  c:0,   f:3.6, fi:0,   benefits:["Leanest muscle-building protein","Niacin & B6 energy metabolism","Very low saturated fat","High bioavailability amino acids","ZSF meal plan staple"]},
+  {id:1,  name:"Chicken Breast",           cat:"Protein", sub:"Poultry",    ref:100, cal:165, p:31,  c:0,   f:3.6, fi:0,   benefits:["Leanest muscle-building protein","Niacin & B6 energy metabolism","Very low saturated fat","High bioavailability amino acids","High bioavailability complete protein"]},
   {id:2,  name:"Chicken Thigh (skinless)", cat:"Protein", sub:"Poultry",    ref:100, cal:177, p:25,  c:0,   f:8.3, fi:0,   benefits:["Richer flavour aids adherence","Zinc & iron for immunity","More forgiving to cook","Higher calories for bulking","Juicier texture"]},
   {id:3,  name:"Turkey Breast",            cat:"Protein", sub:"Poultry",    ref:100, cal:135, p:30,  c:0,   f:1,   fi:0,   benefits:["Leanest available poultry","Tryptophan for serotonin & sleep","Selenium antioxidant","Niacin energy metabolism","Phosphorus for bones"]},
   {id:4,  name:"Turkey Mince (lean)",      cat:"Protein", sub:"Poultry",    ref:100, cal:149, p:29,  c:0,   f:2,   fi:0,   benefits:["Bolognese & kofta base","Low saturated fat","B12 & zinc rich","Digestive friendly","Meal prep hero"]},
   // PROTEINS — BEEF
-  {id:5,  name:"Rump Steak",               cat:"Protein", sub:"Beef",       ref:100, cal:197, p:28,  c:0,   f:9,   fi:0,   benefits:["Haem iron for oxygen transport","Zinc for testosterone","Creatine precursor","B12 energy","ZSF Day 1 & 2 staple"]},
+  {id:5,  name:"Rump Steak",               cat:"Protein", sub:"Beef",       ref:100, cal:197, p:28,  c:0,   f:9,   fi:0,   benefits:["Haem iron for oxygen transport","Zinc for testosterone","Creatine precursor","B12 energy","Performance nutrition staple"]},
   {id:6,  name:"Sirloin Steak",            cat:"Protein", sub:"Beef",       ref:100, cal:207, p:26,  c:0,   f:11,  fi:0,   benefits:["Premium lean cut","CLA anti-inflammatory fat","Phosphorus for bones","Niacin metabolism","Restaurant quality"]},
   {id:7,  name:"Ribeye Steak",             cat:"Protein", sub:"Beef",       ref:100, cal:291, p:24,  c:0,   f:21,  fi:0,   benefits:["Highest flavour beef cut","Rich in CLA anti-inflammatory","Saturated fat hormone support","B12 & zinc dense","Restaurant premium centrepiece"]},
   {id:8,  name:"Eye Fillet (Tenderloin)",  cat:"Protein", sub:"Beef",       ref:100, cal:174, p:28,  c:0,   f:6,   fi:0,   benefits:["Leanest premium beef cut","Tender easy digestion","High zinc & iron","Leucine for muscle synthesis","Low fat luxury"]},
@@ -42,25 +42,25 @@ const BASE_ING = [
   // PROTEINS — SEAFOOD
   {id:14, name:"Salmon (Atlantic)",        cat:"Protein", sub:"Seafood",    ref:100, cal:208, p:20,  c:0,   f:13,  fi:0,   benefits:["Omega-3 EPA/DHA highest","Anti-inflammatory potent","Brain & heart health","Vitamin D source","Astaxanthin antioxidant"]},
   {id:15, name:"Barramundi",               cat:"Protein", sub:"Seafood",    ref:100, cal:97,  p:20,  c:0,   f:1.8, fi:0,   benefits:["Very lean white fish","Sustainable catch","Mild flavour","Gulf region popular","Omega-3 moderate"]},
-  {id:16, name:"Tuna (canned, water)",     cat:"Protein", sub:"Seafood",    ref:100, cal:116, p:26,  c:0,   f:1,   fi:0,   benefits:["Portable convenience protein","Selenium antioxidant","Omega-3 EPA/DHA","Low calorie dense","ZSF shake alternative"]},
+  {id:16, name:"Tuna (canned, water)",     cat:"Protein", sub:"Seafood",    ref:100, cal:116, p:26,  c:0,   f:1,   fi:0,   benefits:["Portable convenience protein","Selenium antioxidant","Omega-3 EPA/DHA","Low calorie dense","Post-workout convenient option"]},
   {id:17, name:"Tuna Steak (fresh)",       cat:"Protein", sub:"Seafood",    ref:100, cal:130, p:29,  c:0,   f:1.3, fi:0,   benefits:["Leanest premium fish","Potassium electrolyte","Niacin energy","B6 protein metabolism","Restaurant centrepiece"]},
   {id:18, name:"Snapper (fillet)",         cat:"Protein", sub:"Seafood",    ref:100, cal:100, p:20,  c:0,   f:1.3, fi:0,   benefits:["Gulf & Indian Ocean catch","Magnesium source","Omega-3 moderate","Mild white fish","Anti-inflammatory"]},
   {id:19, name:"Prawns (king)",            cat:"Protein", sub:"Seafood",    ref:100, cal:99,  p:21,  c:0.9, f:0.9, fi:0,   benefits:["Extremely lean luxury protein","Iodine thyroid health","Astaxanthin antioxidant","Low calorie","Phosphorus bone health"]},
   // EGGS & DAIRY
   {id:20, name:"Whole Egg",                cat:"Protein", sub:"Eggs",       ref:60,  cal:90,  p:7,   c:0.6, f:6,   fi:0,   benefits:["Complete amino acid profile","Choline brain & liver health","Lutein eye health","Vitamin D & B12","Best bioavailability protein"]},
-  {id:21, name:"Egg White",                cat:"Protein", sub:"Eggs",       ref:100, cal:52,  p:11,  c:0.7, f:0.2, fi:0,   benefits:["Pure albumin zero fat","Fast absorption","Low calorie","Complete amino acids","ZSF omelette staple"]},
+  {id:21, name:"Egg White",                cat:"Protein", sub:"Eggs",       ref:100, cal:52,  p:11,  c:0.7, f:0.2, fi:0,   benefits:["Pure albumin zero fat","Fast absorption","Low calorie","Complete amino acids","High protein breakfast essential"]},
   {id:22, name:"Whey Protein Isolate",     cat:"Protein", sub:"Supplements",ref:30,  cal:110, p:25,  c:1,   f:0.5, fi:0,   benefits:["Fastest muscle absorption","BCAA leucine rich","Post-workout essential","Minimal lactose","Muscle protein synthesis"]},
   // DAIRY — expanded
   {id:23, name:"Greek Yogurt (0% fat)",    cat:"Dairy",   sub:"Yogurt",     ref:100, cal:59,  p:10,  c:3.6, f:0.4, fi:0,   benefits:["Live probiotic cultures","Gut microbiome support","Calcium bone density","Casein slow-release protein","Immune system support"]},
   {id:24, name:"Greek Yogurt (full fat)",  cat:"Dairy",   sub:"Yogurt",     ref:100, cal:97,  p:9,   c:3.8, f:5,   fi:0,   benefits:["Higher fat for satiety","CLA anti-inflammatory","Probiotic cultures","Calcium & B12","Hormone support healthy fats"]},
-  {id:25, name:"Cottage Cheese (low fat)", cat:"Dairy",   sub:"Cheese",     ref:100, cal:98,  p:11,  c:3.4, f:4.3, fi:0,   benefits:["Casein overnight muscle repair","Night-time protein ideal","Calcium & phosphorus","High satiety low calorie","ZSF bedtime snack"]},
+  {id:25, name:"Cottage Cheese (low fat)", cat:"Dairy",   sub:"Cheese",     ref:100, cal:98,  p:11,  c:3.4, f:4.3, fi:0,   benefits:["Casein overnight muscle repair","Night-time protein ideal","Calcium & phosphorus","High satiety low calorie","Ideal night-time protein snack"]},
   {id:26, name:"Cream Cheese (lite)",      cat:"Dairy",   sub:"Cheese",     ref:30,  cal:69,  p:3.3, c:2.1, f:5.5, fi:0,   benefits:["Lower fat cream cheese","Calcium source","Spreads & sauces use","Protein moderate","Cooking flexibility"]},
   {id:27, name:"Whipping Cream",           cat:"Dairy",   sub:"Cream",      ref:30,  cal:103, p:0.6, c:0.8, f:11,  fi:0,   benefits:["Calorie dense bulking aid","Fat-soluble vitamin carrier","Sauces & desserts","CLA source","Keto & high-fat protocols"]},
   {id:28, name:"Milk (full fat)",          cat:"Dairy",   sub:"Milk",       ref:240, cal:149, p:8,   c:12,  f:8,   fi:0,   benefits:["Calcium & D combo","Casein + whey blend","Electrolyte recovery","B12 source","Bulking calorie density"]},
   {id:29, name:"Milk (low fat 2%)",        cat:"Dairy",   sub:"Milk",       ref:240, cal:122, p:8,   c:12,  f:5,   fi:0,   benefits:["Balanced protein & carb","Calcium bone health","Lower calorie than full fat","B vitamins","Post-workout option"]},
   {id:30, name:"Milk (skim)",              cat:"Dairy",   sub:"Milk",       ref:240, cal:83,  p:8,   c:12,  f:0.2, fi:0,   benefits:["Lowest fat dairy","High protein to calorie ratio","Calcium & potassium","B12 source","Fat loss protocols"]},
   // CARBS — RICE
-  {id:31, name:"Brown Rice",               cat:"Carbohydrate", sub:"Rice",   ref:100, cal:123, p:2.6, c:26,  f:0.9, fi:1.8, benefits:["Complex sustained energy","Manganese source","Selenium antioxidant","Gluten-free naturally","ZSF meal plan rice"]},
+  {id:31, name:"Brown Rice",               cat:"Carbohydrate", sub:"Rice",   ref:100, cal:123, p:2.6, c:26,  f:0.9, fi:1.8, benefits:["Complex sustained energy","Manganese source","Selenium antioxidant","Gluten-free naturally","Performance nutrition rice choice"]},
   {id:32, name:"White Rice (long grain)",  cat:"Carbohydrate", sub:"Rice",   ref:100, cal:130, p:2.7, c:28,  f:0.3, fi:0.4, benefits:["Fast glycogen replenishment","Easy digestion","Low FODMAP gut friendly","Post-workout ideal","Electrolyte absorption"]},
   {id:33, name:"Basmati Rice",             cat:"Carbohydrate", sub:"Rice",   ref:100, cal:121, p:2.7, c:25,  f:0.4, fi:0.7, benefits:["Lower GI than white rice","Fragrant aromatic texture","Indian & Arabic cuisine staple","Thiamine energy","B vitamins"]},
   {id:34, name:"Jasmine Rice",             cat:"Carbohydrate", sub:"Rice",   ref:100, cal:129, p:2.5, c:28,  f:0.2, fi:0.3, benefits:["Thai aromatic soft texture","Quick cooking convenience","Potassium electrolyte","Easy protein pairing","Gulf & Asian fusion"]},
@@ -69,7 +69,7 @@ const BASE_ING = [
   {id:37, name:"Red Rice",                 cat:"Carbohydrate", sub:"Rice",   ref:100, cal:111, p:2.7, c:23,  f:0.8, fi:2.0, benefits:["Anthocyanin antioxidants","Iron rich","Low GI","Middle Eastern use","Gut health fibre"]},
   // CARBS — GRAINS
   {id:38, name:"Quinoa",                   cat:"Carbohydrate", sub:"Grains",  ref:100, cal:120, p:4.4, c:22,  f:1.9, fi:2.8, benefits:["Complete protein all 9 aminos","Gluten-free pseudo-grain","Iron & magnesium","Quercetin anti-inflammatory","Longevity superfood"]},
-  {id:39, name:"Oats (quick)",             cat:"Carbohydrate", sub:"Grains",  ref:100, cal:389, p:17,  c:66,  f:7,   fi:10,  benefits:["Beta-glucan cholesterol reduction","4hr sustained energy","Avenanthramides antioxidant","Prebiotic fibre","ZSF pre-gym meal"]},
+  {id:39, name:"Oats (quick)",             cat:"Carbohydrate", sub:"Grains",  ref:100, cal:389, p:17,  c:66,  f:7,   fi:10,  benefits:["Beta-glucan cholesterol reduction","4hr sustained energy","Avenanthramides antioxidant","Prebiotic fibre","Ideal pre-training meal base"]},
   {id:40, name:"Steel Cut Oats",           cat:"Carbohydrate", sub:"Grains",  ref:100, cal:375, p:14,  c:67,  f:7,   fi:10,  benefits:["Lowest GI oat variety","Maximum fibre retention","Longest satiety window","Heart health beta-glucan","Meal prep batch cook"]},
   {id:41, name:"Freekeh",                  cat:"Carbohydrate", sub:"Grains",  ref:100, cal:135, p:4.9, c:28,  f:0.5, fi:6,   benefits:["Ancient Middle Eastern grain","Highest fibre grain variety","Prebiotic gut diversity","Iron & calcium","Smoked distinctive flavour"]},
   {id:42, name:"Bulgur Wheat",             cat:"Carbohydrate", sub:"Grains",  ref:100, cal:83,  p:3.1, c:19,  f:0.2, fi:4.5, benefits:["Tabbouleh classic base","Low GI grain","Manganese bone health","B vitamins energy","Quick 5-min cook"]},
@@ -79,7 +79,7 @@ const BASE_ING = [
   {id:45, name:"White Pasta",              cat:"Carbohydrate", sub:"Pasta",   ref:100, cal:158, p:5.8, c:31,  f:0.9, fi:1.8, benefits:["Energy dense pre-event","Easy digestion","B vitamins fortified","Performance carb load","Versatile base"]},
   {id:46, name:"Wholemeal Pasta",          cat:"Carbohydrate", sub:"Pasta",   ref:100, cal:149, p:6.3, c:28,  f:1.1, fi:3.9, benefits:["Higher fibre lower GI","Magnesium rich","Sustained energy","Gut health support","Better satiety"]},
   {id:47, name:"Chickpea Pasta",           cat:"Carbohydrate", sub:"Pasta",   ref:100, cal:181, p:12,  c:27,  f:3.5, fi:5,   benefits:["Highest protein pasta","Folate DNA synthesis","Resistant starch gut","Blood sugar stability","Plant protein combo"]},
-  {id:48, name:"Sweet Potato",             cat:"Carbohydrate", sub:"Root Veg",ref:100, cal:86,  p:1.6, c:20,  f:0.1, fi:3,   benefits:["Beta-carotene vitamin A","Low GI sustained energy","Potassium source","Anti-inflammatory","ZSF sweet potato mash"]},
+  {id:48, name:"Sweet Potato",             cat:"Carbohydrate", sub:"Root Veg",ref:100, cal:86,  p:1.6, c:20,  f:0.1, fi:3,   benefits:["Beta-carotene vitamin A","Low GI sustained energy","Potassium source","Anti-inflammatory","Performance carb for training days"]},
   {id:49, name:"White Potato",             cat:"Carbohydrate", sub:"Root Veg",ref:100, cal:87,  p:2.3, c:20,  f:0.1, fi:1.8, benefits:["Potassium electrolyte","Resistant starch when cooled","Satiety index high","Vitamin C & B6","Glycogen replenishment"]},
   {id:50, name:"Sourdough Bread",          cat:"Carbohydrate", sub:"Bread",   ref:40,  cal:98,  p:3.6, c:19,  f:0.8, fi:1,   benefits:["Fermentation improves gut health","Lower GI than white","Phytic acid reduced","Better mineral absorption","Lactic acid prebiotic"]},
   {id:51, name:"Wholegrain Bread",         cat:"Carbohydrate", sub:"Bread",   ref:38,  cal:95,  p:4.2, c:17,  f:1.5, fi:2.7, benefits:["High fibre satiety","B vitamins complex","Lignans anti-inflammatory","Blood sugar stability","Cholesterol reduction"]},
@@ -87,7 +87,7 @@ const BASE_ING = [
   {id:53, name:"Pita Bread (white)",       cat:"Carbohydrate", sub:"Bread",   ref:60,  cal:170, p:5.5, c:35,  f:0.7, fi:1.5, benefits:["Arabic bread tradition","Quick energy source","Low fat option","Dipping bread","Easy digestion"]},
   {id:54, name:"Lavash Flatbread",         cat:"Carbohydrate", sub:"Bread",   ref:50,  cal:145, p:4.5, c:29,  f:1.5, fi:1.2, benefits:["Gulf region thin bread","Low calorie wrap","Iron fortified","Versatile meal base","Traditional culture"]},
   {id:55, name:"Rye Bread",                cat:"Carbohydrate", sub:"Bread",   ref:32,  cal:83,  p:2.7, c:15,  f:1,   fi:1.9, benefits:["Lowest GI bread","Arabinoxylan gut fibre","Blood sugar stability","Satiety superior","Cholesterol support"]},
-  {id:56, name:"Burgen Soy-Lin Bread",     cat:"Carbohydrate", sub:"Bread",   ref:38,  cal:91,  p:5.4, c:12,  f:2.6, fi:3,   benefits:["Highest protein bread","Soy isoflavones","Low GI","Omega-3 linseeds","ZSF plan specified"]},
+  {id:56, name:"Burgen Soy-Lin Bread",     cat:"Carbohydrate", sub:"Bread",   ref:38,  cal:91,  p:5.4, c:12,  f:2.6, fi:3,   benefits:["Highest protein bread","Soy isoflavones","Low GI","Omega-3 linseeds","Highest protein bread available"]},
   // VEGETABLES — expanded
   {id:57, name:"Spinach",                  cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:23,  p:2.9, c:3.6, f:0.4, fi:2.2, benefits:["Iron for blood oxygen","Nitrates athletic performance","Lutein & zeaxanthin eyes","Vitamin K bone density","Folate cell health"]},
   {id:58, name:"Kale",                     cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:35,  p:2.9, c:4.4, f:1.5, fi:4.1, benefits:["Vitamin K highest food","Sulforaphane anti-cancer","Calcium exceeds milk","Quercetin inflammation","Detox glucosinolates"]},
@@ -106,7 +106,7 @@ const BASE_ING = [
   {id:71, name:"Red Capsicum",             cat:"Vegetable", sub:"Vegetables", ref:100, cal:31,  p:1,   c:6,   f:0.3, fi:2.1, benefits:["Highest Vitamin C vegetable","Beta-carotene antioxidant","Lutein eye protection","Collagen synthesis","Anti-inflammatory"]},
   {id:72, name:"Yellow Capsicum",          cat:"Vegetable", sub:"Vegetables", ref:100, cal:27,  p:1,   c:6.3, f:0.2, fi:0.9, benefits:["Zeaxanthin eye health","Vitamin C source","Low calorie colour","Antioxidant carotenoids","Collagen synthesis"]},
   {id:73, name:"Green Capsicum",           cat:"Vegetable", sub:"Vegetables", ref:100, cal:20,  p:0.9, c:4.6, f:0.2, fi:1.7, benefits:["Vitamin C source","Chlorophyll detox","Low calorie","Lycopene precursor","Versatile cooking"]},
-  {id:74, name:"Asparagus",               cat:"Vegetable", sub:"Vegetables", ref:100, cal:20,  p:2.2, c:3.9, f:0.1, fi:2.1, benefits:["Natural diuretic lean physique","Folate prenatal health","Prebiotic inulin gut","Glutathione anti-aging","ZSF post-gym meal"]},
+  {id:74, name:"Asparagus",               cat:"Vegetable", sub:"Vegetables", ref:100, cal:20,  p:2.2, c:3.9, f:0.1, fi:2.1, benefits:["Natural diuretic lean physique","Folate prenatal health","Prebiotic inulin gut","Glutathione anti-aging","Post-workout meal essential"]},
   {id:75, name:"Zucchini",                 cat:"Vegetable", sub:"Vegetables", ref:100, cal:17,  p:1.2, c:3.1, f:0.3, fi:1,   benefits:["Extremely low calorie filler","Pasta substitute noodles","Potassium source","Vitamin C & A","Hydrating 95% water"]},
   {id:76, name:"Eggplant (Aubergine)",     cat:"Vegetable", sub:"Vegetables", ref:100, cal:25,  p:1,   c:6,   f:0.2, fi:3,   benefits:["Nasunin brain antioxidant","Middle Eastern essential","Manganese bone health","Fibre gut health","Baba ganoush base"]},
   {id:77, name:"Mushrooms (button)",       cat:"Vegetable", sub:"Vegetables", ref:100, cal:22,  p:3.1, c:3.3, f:0.3, fi:1,   benefits:["Vitamin D if UV-exposed","Beta-glucan immunity","B vitamins energy","Umami flavour depth","Low calorie protein boost"]},
@@ -168,7 +168,7 @@ const BASE_ING = [
   {id:130,name:"Cumin",                    cat:"Spice", sub:"Middle Eastern",  ref:3,  cal:8,  p:0.4, c:0.9, f:0.5, fi:0.2, benefits:["Iron highest spice source","Thymol digestion aid","Blood sugar regulation","Antimicrobial","Gulf cuisine essential"]},
   {id:131,name:"Coriander (ground)",       cat:"Spice", sub:"Middle Eastern",  ref:3,  cal:8,  p:0.3, c:1.2, f:0.4, fi:0.8, benefits:["Blood glucose lowering","Digestive antispasmodic","Iron & manganese","Anti-anxiety linalool","Arabic cooking essential"]},
   {id:132,name:"Cardamom",                 cat:"Spice", sub:"Middle Eastern",  ref:2,  cal:6,  p:0.2, c:1.4, f:0.1, fi:0.6, benefits:["Digestive comfort spice","Anti-nausea properties","Blood pressure reduction","Gulf coffee & tea tradition","Antimicrobial breath"]},
-  {id:133,name:"Cinnamon",                 cat:"Spice", sub:"Anti-Inflammatory",ref:3, cal:8,  p:0.1, c:2.1, f:0.1, fi:1.4, benefits:["Insulin sensitivity improvement","Blood sugar regulation","ORAC high antioxidant","Anti-inflammatory","ZSF oat breakfast spice"]},
+  {id:133,name:"Cinnamon",                 cat:"Spice", sub:"Anti-Inflammatory",ref:3, cal:8,  p:0.1, c:2.1, f:0.1, fi:1.4, benefits:["Insulin sensitivity improvement","Blood sugar regulation","ORAC high antioxidant","Anti-inflammatory","Breakfast oat essential spice"]},
   {id:134,name:"Paprika (smoked)",         cat:"Spice", sub:"Cooking",         ref:3,  cal:8,  p:0.4, c:1.5, f:0.4, fi:0.7, benefits:["Capsaicin anti-inflammatory","Vitamin A beta-carotene","Metabolism thermogenic","Iron source","Colour without calories"]},
   {id:135,name:"Chilli Powder",            cat:"Spice", sub:"Cooking",         ref:3,  cal:8,  p:0.3, c:1.4, f:0.4, fi:0.7, benefits:["Capsaicin thermogenic 4–5%","Vitamin C source","Pain relief compound","Anti-inflammatory","Appetite regulation"]},
   {id:136,name:"Black Pepper",             cat:"Spice", sub:"Cooking",         ref:3,  cal:8,  p:0.3, c:2,   f:0.1, fi:0.8, benefits:["Piperine curcumin absorb 2000%","Digestive HCl stimulation","Antioxidant chromium","Antimicrobial","Bioavailability enhancer"]},
@@ -196,24 +196,24 @@ const BASE_ING = [
 
 // ─── Seed recipes ──────────────────────────────────────────────────────────────
 const SEED_RECIPES = [
-  // ── ORIGINALS (ZSF PROTOCOL) ───────────────────────────────────────────────
-  {id:1,  name:"ZSF Power Oat Bowl",                  cat:"Breakfast",goal:["muscle_gain","fat_loss"],       prep:5,  cook:5,  serves:1, emoji:"🥣", desc:"80g oats, WPI and cinnamon — the ZSF pre-gym meal exactly as prescribed. Fuel that sustains 2 hrs of hard training.", ings:[{id:39,amt:80},{id:22,amt:30},{id:21,amt:60}], method:["Mix oats with 250ml almond milk in a pot.","Simmer low heat 3–4 min, stirring.","Remove from heat, stir in WPI and cinnamon.","Top with blueberries and serve immediately.","Consume 60–90 min before training."], tags:["ZSF Protocol","Pre-Workout","High Protein"]},
+  // ── BURNT CALORIES ORIGINALS ───────────────────────────────────────────────
+  {id:1,  name:"Burnt Calories Power Oat Bowl",                  cat:"Breakfast",goal:["muscle_gain","fat_loss"],       prep:5,  cook:5,  serves:1, emoji:"🥣", desc:"80g oats, WPI and cinnamon — The ultimate pre-training breakfast. Fuel that sustains 2 hrs of hard training.", ings:[{id:39,amt:80},{id:22,amt:30},{id:21,amt:60}], method:["Mix oats with 250ml almond milk in a pot.","Simmer low heat 3–4 min, stirring.","Remove from heat, stir in WPI and cinnamon.","Top with blueberries and serve immediately.","Consume 60–90 min before training."], tags:["Pre-Workout","High Protein","Meal Prep"]},
   {id:2,  name:"Za'atar Chicken Salad",                cat:"Lunch",   goal:["fat_loss","longevity"],          prep:10, cook:12, serves:1, emoji:"🥗", desc:"Za'atar-rubbed chicken over cos, cherry tomatoes, cucumber and sumac-lemon dressing. Under 400 kcal, over 40g protein.", ings:[{id:1,amt:200},{id:60,amt:80},{id:69,amt:100},{id:85,amt:80},{id:137,amt:6}], method:["Rub chicken with za'atar, salt and olive oil.","Grill 6 min each side. Rest 3 min.","Slice and arrange over salad leaves.","Dress with sumac, lemon juice and EVOO.","Garnish with fresh mint."], tags:["Middle Eastern","Low Carb","Anti-Inflammatory"]},
   {id:3,  name:"Lamb Kofta with Freekeh",              cat:"Dinner",  goal:["muscle_gain","longevity"],       prep:15, cook:20, serves:2, emoji:"🍖", desc:"Baharat-spiced lamb kofta over smoky freekeh — a premium Gulf performance meal with iron, zinc and ancient grain fibre.", ings:[{id:12,amt:300},{id:41,amt:120},{id:130,amt:6},{id:138,amt:6},{id:115,amt:15}], method:["Mix lamb with baharat, cumin, garlic and parsley.","Shape into kofta torpedoes around skewers.","Grill 3–4 min each side until caramelised.","Cook freekeh 2:1 water ratio, 20 min.","Serve kofta over freekeh with cold yogurt."], tags:["Middle Eastern","Iron Rich","Performance"]},
   {id:4,  name:"Salmon Quinoa Power Bowl",              cat:"Dinner",  goal:["longevity","fat_loss"],          prep:10, cook:20, serves:1, emoji:"🐟", desc:"Pan-seared salmon over complete-protein quinoa with asparagus and cherry tomatoes. Omega-3 and sulforaphane in one bowl.", ings:[{id:14,amt:180},{id:38,amt:100},{id:74,amt:100},{id:69,amt:80},{id:119,amt:10}], method:["Season salmon with salt, pepper and lemon zest.","Sear skin-down in EVOO 4 min, flip 3 min.","Steam asparagus 5 min until tender-crisp.","Cook quinoa 1:2 ratio, fluff with fork.","Plate quinoa, top with salmon and asparagus."], tags:["Omega-3","Anti-Aging","Restaurant Quality"]},
-  {id:5,  name:"Power Egg White Omelette",              cat:"Breakfast",goal:["fat_loss","muscle_gain"],      prep:5,  cook:8,  serves:1, emoji:"🍳", desc:"Egg whites, whole egg, mushrooms and spinach on Burgen soy-lin — the ZSF Day 2 breakfast. High protein, very low fat.", ings:[{id:21,amt:150},{id:20,amt:60},{id:77,amt:80},{id:57,amt:60},{id:56,amt:38}], method:["Whisk egg whites with one whole egg, season.","Sauté mushrooms and spinach in coconut oil 3 min.","Pour egg mix over vegetables.","Let set 2 min then fold gently.","Serve on toasted Burgen bread."], tags:["ZSF Protocol","Low Fat","High Protein"]},
-  {id:6,  name:"Rump Steak & Sweet Potato",             cat:"Dinner",  goal:["muscle_gain"],                  prep:5,  cook:15, serves:1, emoji:"🥩", desc:"200g rump steak, sweet potato mash and baby peas — the ZSF Day 1 & 3 dinner. Iron, zinc, slow carbs, high protein.", ings:[{id:5,amt:200},{id:48,amt:150},{id:88,amt:100}], method:["Bring steak to room temp, season generously.","Sear in cast-iron pan 3–4 min per side for medium.","Rest 5 min before slicing.","Steam sweet potato, mash with a pinch coconut oil.","Plate with steamed baby peas."], tags:["ZSF Protocol","Iron Rich","Muscle Building"]},
+  {id:5,  name:"Power Egg White Omelette",              cat:"Breakfast",goal:["fat_loss","muscle_gain"],      prep:5,  cook:8,  serves:1, emoji:"🍳", desc:"Egg whites, whole egg, mushrooms and spinach on Burgen soy-lin — a high protein, very low fat breakfast classic.", ings:[{id:21,amt:150},{id:20,amt:60},{id:77,amt:80},{id:57,amt:60},{id:56,amt:38}], method:["Whisk egg whites with one whole egg, season.","Sauté mushrooms and spinach in coconut oil 3 min.","Pour egg mix over vegetables.","Let set 2 min then fold gently.","Serve on toasted Burgen bread."], tags:["Low Fat","High Protein","Breakfast"]},
+  {id:6,  name:"Rump Steak & Sweet Potato",             cat:"Dinner",  goal:["muscle_gain"],                  prep:5,  cook:15, serves:1, emoji:"🥩", desc:"200g rump steak, sweet potato mash and baby peas — Iron, zinc, slow carbs, high protein. A performance dinner classic.", ings:[{id:5,amt:200},{id:48,amt:150},{id:88,amt:100}], method:["Bring steak to room temp, season generously.","Sear in cast-iron pan 3–4 min per side for medium.","Rest 5 min before slicing.","Steam sweet potato, mash with a pinch coconut oil.","Plate with steamed baby peas."], tags:["Iron Rich","Muscle Building","Performance"]},
   {id:7,  name:"Baharat Chicken Basmati Bowl",          cat:"Lunch",   goal:["muscle_gain","longevity"],       prep:10, cook:25, serves:1, emoji:"🍲", desc:"Baharat-spiced chicken over fragrant basmati with roasted capsicum and fresh coriander. Aromatic Gulf performance food.", ings:[{id:1,amt:200},{id:33,amt:120},{id:71,amt:100},{id:138,amt:6},{id:116,amt:10}], method:["Marinate chicken in baharat, olive oil and garlic.","Grill or pan-fry 6 min per side.","Cook basmati and fluff with fork.","Roast capsicum strips 15 min at 200°C.","Plate basmati, chicken, capsicum and coriander."], tags:["Middle Eastern","Aromatic","Performance"]},
   {id:8,  name:"Overnight Protein Oats",                cat:"Breakfast",goal:["longevity","muscle_gain"],     prep:5,  cook:0,  serves:1, emoji:"🌾", desc:"WPI-fortified overnight oats with chia seeds and almonds. Batch prep Sunday — grab and go all week.", ings:[{id:39,amt:80},{id:22,amt:30},{id:125,amt:20},{id:122,amt:30}], method:["Combine oats, WPI and chia seeds in a jar.","Pour over 300ml almond milk. Stir.","Top with sliced almonds.","Refrigerate minimum 4 hours or overnight.","Eat cold or warm 90 sec in microwave."], tags:["Meal Prep","Slow Release","Heart Healthy"]},
-  {id:9,  name:"Post-Workout Recovery Shake",           cat:"Snack",   goal:["muscle_gain","fat_loss"],       prep:2,  cook:0,  serves:1, emoji:"🥤", desc:"WPI, banana and blueberries — consume within 30 min post-training for MPS and glycogen replenishment.", ings:[{id:22,amt:30},{id:105,amt:120},{id:99,amt:50}], method:["Add WPI, banana and blueberries to blender.","Add 300ml almond milk and ice cubes.","Blend until smooth.","Consume within 30 minutes post-workout.","ZSF Meal 6 replacement option."], tags:["Post-Workout","ZSF Protocol","Antioxidant"]},
+  {id:9,  name:"Post-Workout Recovery Shake",           cat:"Snack",   goal:["muscle_gain","fat_loss"],       prep:2,  cook:0,  serves:1, emoji:"🥤", desc:"WPI, banana and blueberries — consume within 30 min post-training for MPS and glycogen replenishment.", ings:[{id:22,amt:30},{id:105,amt:120},{id:99,amt:50}], method:["Add WPI, banana and blueberries to blender.","Add 300ml almond milk and ice cubes.","Blend until smooth.","Consume within 30 minutes post-workout.","Great post-workout or pre-bed option."], tags:["Post-Workout","Recovery","Antioxidant"]},
   {id:10, name:"Greek Yogurt Longevity Parfait",         cat:"Snack",   goal:["longevity","fat_loss"],         prep:5,  cook:0,  serves:1, emoji:"🍦", desc:"Full fat Greek yogurt with pomegranate, pumpkin seeds and chia. Probiotic, antioxidant-dense, testosterone-supporting.", ings:[{id:24,amt:200},{id:113,amt:50},{id:124,amt:20},{id:125,amt:10}], method:["Spoon Greek yogurt into a bowl or glass.","Scatter pomegranate arils on top.","Sprinkle pumpkin seeds and chia seeds.","Optional tiny drizzle of raw honey.","Best consumed as an afternoon snack or light breakfast."], tags:["Probiotic","Longevity","Gut Health"]},
   {id:11, name:"Chicken Broccoli Brown Rice",            cat:"Dinner",  goal:["fat_loss","muscle_gain"],       prep:10, cook:20, serves:1, emoji:"🍱", desc:"The elevated bodybuilder staple — coconut oil chicken, sulforaphane broccoli, brown rice. Simple. Effective. Delicious.", ings:[{id:1,amt:200},{id:65,amt:100},{id:31,amt:150},{id:120,amt:7}], method:["Season chicken with paprika, cumin and garlic.","Pan-fry in coconut oil 6 min each side.","Steam broccoli 5 min until bright green.","Serve over warm brown rice.","Drizzle with low-sodium soy or fresh lemon."], tags:["Classic","Sulforaphane Rich","Lean Muscle"]},
   {id:12, name:"Turkish Red Lentil Soup",                cat:"Lunch",   goal:["longevity","fat_loss"],         prep:10, cook:25, serves:2, emoji:"🫕", desc:"Cumin and coriander red lentil soup with smoked paprika oil finish. Arabic classic, highest fibre legume, gut-healing.", ings:[{id:149,amt:150},{id:80,amt:100},{id:130,amt:6},{id:131,amt:5},{id:134,amt:4}], method:["Sauté onion in olive oil until golden.","Add garlic, cumin and coriander, toast 1 min.","Add red lentils and 600ml stock. Simmer 20 min.","Blend until smooth.","Finish with smoked paprika oil and fresh lemon."], tags:["Middle Eastern","High Fibre","Gut Health"]},
   {id:13, name:"Ribeye & Roasted Vegetables",            cat:"Dinner",  goal:["muscle_gain"],                  prep:10, cook:20, serves:1, emoji:"🥩", desc:"Premium ribeye with roasted capsicum, zucchini and herb olive oil. High calorie, high flavour — restaurant at home.", ings:[{id:7,amt:250},{id:71,amt:100},{id:75,amt:100},{id:119,amt:15}], method:["Season ribeye generously, rest at room temp 20 min.","Sear in screaming hot cast-iron 3 min per side.","Roast vegetables 200°C with EVOO and herbs 15 min.","Rest steak 5 min, slice against grain.","Plate vegetables, top with steak. Drizzle EVOO."], tags:["Premium Cut","Calorie Dense","Bulking"]},
   {id:14, name:"Berry Açaí Power Bowl",                  cat:"Breakfast",goal:["longevity"],                  prep:10, cook:0,  serves:1, emoji:"🫐", desc:"Frozen açaí blended with mixed berries, topped with goji berries, chia and blueberries. Highest ORAC antioxidant breakfast.", ings:[{id:103,amt:100},{id:99,amt:50},{id:100,amt:50},{id:104,amt:20},{id:125,amt:15}], method:["Blend açaí pulp with a splash of almond milk until thick.","Pour into a bowl — it should hold a spoon.","Top with blueberries, strawberries and goji berries.","Sprinkle chia seeds over the top.","Drizzle with a little raw honey if desired."], tags:["Antioxidant","Longevity","Superfood"]},
-  {id:15, name:"Casein Night Recovery Bowl",             cat:"Snack",   goal:["muscle_gain"],                  prep:3,  cook:0,  serves:1, emoji:"🌙", desc:"Cottage cheese, pumpkin seeds and walnuts — casein protein digests slowly all night rebuilding muscle as you sleep.", ings:[{id:25,amt:200},{id:124,amt:20},{id:123,amt:15}], method:["Spoon cottage cheese into a bowl.","Top with pumpkin seeds and walnut halves.","Optional pinch of cinnamon.","Consume 30–60 min before bed.","Casein slow-digests overnight for continuous muscle repair."], tags:["Casein Protein","Night Recovery","ZSF Protocol"]},
+  {id:15, name:"Casein Night Recovery Bowl",             cat:"Snack",   goal:["muscle_gain"],                  prep:3,  cook:0,  serves:1, emoji:"🌙", desc:"Cottage cheese, pumpkin seeds and walnuts — casein protein digests slowly all night rebuilding muscle as you sleep.", ings:[{id:25,amt:200},{id:124,amt:20},{id:123,amt:15}], method:["Spoon cottage cheese into a bowl.","Top with pumpkin seeds and walnut halves.","Optional pinch of cinnamon.","Consume 30–60 min before bed.","Casein slow-digests overnight for continuous muscle repair."], tags:["Casein Protein","Night Recovery","Performance"]},
 
-  // ── INSPIRED BY CALO MENU — LONGEVITY VERSIONS ────────────────────────────
+  // ── BURNT CALORIES MENU ────────────────────────────────────────────────────
   {id:16, name:"Golden Harissa Chicken Zoodles",        cat:"Dinner",  goal:["fat_loss","longevity"],         prep:10, cook:15, serves:1, emoji:"🌶️", desc:"Harissa-marinated chicken breast over spiralised zucchini noodles with roasted capsicum. Bold flavour, ultra-low carb.", ings:[{id:1,amt:200},{id:75,amt:250},{id:71,amt:100},{id:141,amt:15},{id:119,amt:10}], method:["Marinate chicken in harissa paste, olive oil and lemon 30 min.","Spiralise or peel zucchini into noodles.","Grill chicken 6 min per side. Rest then slice.","Sauté zoodles and capsicum in EVOO 3 min — keep crunch.","Plate zoodles, top with chicken and extra harissa drizzle."], tags:["Low Carb","North African","High Protein"]},
   {id:17, name:"Spiced Beef & Lavash Wraps",            cat:"Lunch",   goal:["muscle_gain","fat_loss"],       prep:15, cook:15, serves:2, emoji:"🌯", desc:"Baharat-spiced beef mince with diced tomato, red onion and tahini yogurt rolled in warm lavash flatbread.", ings:[{id:9,amt:250},{id:69,amt:100},{id:81,amt:60},{id:89,amt:20},{id:54,amt:100}], method:["Brown beef mince with baharat, cumin and garlic.","Add diced tomato and simmer 5 min.","Mix tahini with yogurt and lemon for sauce.","Warm lavash on a dry pan 30 sec each side.","Fill with beef, red onion, tomato and tahini sauce. Roll tight."], tags:["Middle Eastern","Meal Prep","High Protein"]},
   {id:18, name:"Gulf Snapper Tikka with Saffron Basmati",cat:"Dinner", goal:["longevity","fat_loss"],         prep:20, cook:20, serves:2, emoji:"🐠", desc:"Tikka-spiced Gulf snapper fillets over saffron-infused basmati with charred lemon and fresh coriander.", ings:[{id:17,amt:300},{id:33,amt:150},{id:107,amt:3},{id:129,amt:0.4},{id:116,amt:15}], method:["Marinate snapper in tikka paste, yogurt and lemon 1 hr.","Bloom saffron in 2 tbsp warm water for 10 min.","Cook basmati, add saffron water halfway through.","Grill snapper 4 min per side until slightly charred.","Plate saffron rice, top with fish and fresh coriander."], tags:["Gulf Cuisine","Omega-3","Restaurant Quality"]},
@@ -223,7 +223,7 @@ const SEED_RECIPES = [
   {id:22, name:"Bahraini Chicken Shakshuka",             cat:"Breakfast",goal:["fat_loss","longevity"],       prep:10, cook:20, serves:2, emoji:"🍳", desc:"Spiced tomato passata with shredded baharat chicken, poached eggs and fresh coriander. A pan full of cozy Gulf comfort.", ings:[{id:1,amt:200},{id:152,amt:200},{id:20,amt:120},{id:138,amt:6},{id:70,amt:80}], method:["Cook chicken with baharat until shredded.","Sauté onion and garlic, add passata and spices.","Simmer tomato sauce 10 min until thickened.","Stir in shredded chicken. Make wells for eggs.","Crack eggs into wells, cover and cook 5 min. Top with coriander."], tags:["Middle Eastern","High Protein","Gut Health"]},
   {id:23, name:"Almond-Stuffed Medjool Dates",          cat:"Snack",   goal:["longevity","maintenance"],      prep:5,  cook:0,  serves:1, emoji:"🌴", desc:"Medjool dates filled with almond butter and a whole almond. Natural energy, Gulf tradition, potassium and magnesium.", ings:[{id:112,amt:72},{id:127,amt:20},{id:122,amt:10}], method:["Slice dates lengthways and remove the pit.","Fill each date with a small spoon of almond butter.","Press a whole almond on top to finish.","Arrange on a plate and serve at room temperature.","Perfect pre-workout natural energy or afternoon snack."], tags:["Natural Energy","Gulf Tradition","Pre-Workout"]},
   {id:24, name:"Burnt Calories Cobb Salad",                  cat:"Lunch",   goal:["fat_loss","muscle_gain"],       prep:15, cook:12, serves:1, emoji:"🥗", desc:"Grilled chicken, boiled eggs, avocado, cherry tomatoes and cos over a bed of greens with a light lemon dressing.", ings:[{id:1,amt:180},{id:20,amt:120},{id:118,amt:75},{id:69,amt:80},{id:60,amt:80}], method:["Grill chicken with mixed herbs until cooked. Rest and slice.","Hard-boil eggs 8 min, peel and halve.","Slice avocado and halve cherry tomatoes.","Arrange all ingredients over cos lettuce.","Dress with lemon juice, EVOO, salt and pepper."], tags:["High Protein","Healthy Fats","Classic"]},
-  {id:25, name:"Burnt Calories Breakfast Bowl",       cat:"Breakfast",goal:["muscle_gain","fat_loss"],      prep:5,  cook:10, serves:1, emoji:"🍳", desc:"Scrambled eggs, turkey mince, roasted sweet potato cubes and wilted spinach — high-protein fuel for a full morning.", ings:[{id:20,amt:120},{id:4,amt:100},{id:48,amt:100},{id:57,amt:60}], method:["Dice sweet potato small, roast at 200°C for 15 min until golden.","Brown turkey mince with baharat and garlic.","Scramble eggs soft in a separate pan.","Wilt spinach for 1 min.","Build bowl: sweet potato base, turkey, eggs, spinach."], tags:["High Protein","Meal Prep","ZSF Protocol"]},
+  {id:25, name:"Burnt Calories Breakfast Bowl",       cat:"Breakfast",goal:["muscle_gain","fat_loss"],      prep:5,  cook:10, serves:1, emoji:"🍳", desc:"Scrambled eggs, turkey mince, roasted sweet potato cubes and wilted spinach — high-protein fuel for a full morning.", ings:[{id:20,amt:120},{id:4,amt:100},{id:48,amt:100},{id:57,amt:60}], method:["Dice sweet potato small, roast at 200°C for 15 min until golden.","Brown turkey mince with baharat and garlic.","Scramble eggs soft in a separate pan.","Wilt spinach for 1 min.","Build bowl: sweet potato base, turkey, eggs, spinach."], tags:["High Protein","Meal Prep","Breakfast"]},
   {id:26, name:"Turmeric Cauliflower Mash & Chicken",   cat:"Dinner",  goal:["fat_loss","longevity"],         prep:10, cook:20, serves:1, emoji:"🍽️", desc:"Grilled chicken breast over creamy turmeric cauliflower mash with roasted cherry tomatoes and a marinara drizzle.", ings:[{id:1,amt:200},{id:66,amt:200},{id:69,amt:80},{id:100,amt:3},{id:152,amt:60}], method:["Steam cauliflower until very soft, 12 min.","Blend with EVOO, turmeric, salt and garlic into smooth mash.","Season and grill chicken 6 min per side.","Roast cherry tomatoes in oven 200°C for 10 min.","Plate mash, top with sliced chicken, tomatoes and marinara."], tags:["Low Carb","Anti-Inflammatory","Longevity"]},
   {id:27, name:"Roasted Beetroot & Rocket Salad",       cat:"Lunch",   goal:["longevity","fat_loss"],         prep:10, cook:30, serves:2, emoji:"🥗", desc:"Roasted beetroot, rocket, walnuts and pomegranate with a balsamic dressing. Nitrates, antioxidants, performance salad.", ings:[{id:87,amt:200},{id:61,amt:80},{id:123,amt:30},{id:113,amt:40},{id:119,amt:15}], method:["Dice beetroot, toss with EVOO and roast 200°C for 30 min.","Allow to cool for 5 min.","Build salad with rocket, walnuts and pomegranate arils.","Top with roasted beetroot.","Dress with balsamic, EVOO, salt and pepper."], tags:["Longevity","Nitrates","Anti-Inflammatory"]},
   {id:28, name:"Eggplant & Tomato Shakshuka",           cat:"Breakfast",goal:["longevity","fat_loss"],        prep:10, cook:20, serves:2, emoji:"🍆", desc:"Roasted eggplant in spiced tomato sauce with poached eggs, halloumi and za'atar. A vegetarian longevity powerhouse.", ings:[{id:76,amt:200},{id:152,amt:200},{id:20,amt:120},{id:137,amt:8},{id:138,amt:4}], method:["Dice eggplant, roast in EVOO at 200°C for 20 min.","Sauté onion and garlic, add passata and baharat.","Add roasted eggplant to the sauce, simmer 5 min.","Make wells, crack eggs in and cover 5 min.","Finish with za'atar and fresh coriander."], tags:["Vegetarian","Middle Eastern","Longevity"]},
@@ -301,7 +301,8 @@ function ingMacros({id,amt}) {
 }
 function recipeTotals(recipe) {
   let cal=0,p=0,c=0,f=0,fi=0;
-  recipe.ings.forEach(ri=>{const m=ingMacros(ri);cal+=m.cal;p+=m.p;c+=m.c;f+=m.f;fi+=m.fi;});
+  const ings = typeof recipe.ings === "string" ? JSON.parse(recipe.ings) : (recipe.ings || []);
+  ings.forEach(ri=>{const m=ingMacros(ri);cal+=m.cal;p+=m.p;c+=m.c;f+=m.f;fi+=m.fi;});
   const s=recipe.serves||1;
   return {cal:Math.round(cal/s),p:Math.round(p/s),c:Math.round(c/s),f:Math.round(f/s),fi:Math.round(fi/s)};
 }
@@ -347,8 +348,13 @@ function RecipeCard({recipe,onSelect,selected}) {
 // ─── Recipe detail ──────────────────────────────────────────────────────────────
 function RecipeDetail({recipe,onClose,onDelete}) {
   if(!recipe) return null;
-  const m=recipeTotals(recipe);
-  const resolved=recipe.ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
+  // ings may come from Supabase as a JSON string — parse if needed
+  const ings = typeof recipe.ings === "string" ? JSON.parse(recipe.ings) : (recipe.ings || []);
+  const tags = typeof recipe.tags === "string" ? JSON.parse(recipe.tags) : (recipe.tags || []);
+  const method = typeof recipe.method === "string" ? JSON.parse(recipe.method) : (recipe.method || []);
+  const safeRecipe = {...recipe, ings, tags, method};
+  const m=recipeTotals(safeRecipe);
+  const resolved=ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
   return (
     <div style={{marginTop:16,...crd,borderRadius:tk.rXl}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
@@ -363,7 +369,7 @@ function RecipeDetail({recipe,onClose,onDelete}) {
         </div>
       </div>
       <p style={{fontSize:13,color:"var(--color-text-secondary)",lineHeight:1.6,marginBottom:16}}>{recipe.desc}</p>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>{recipe.tags.map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>{tags.map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"16px 12px",marginBottom:24}}>
         {[["Calories",m.cal,""],["Protein",m.p,"g"],["Carbs",m.c,"g"],["Fat",m.f,"g"],["Fibre",m.fi,"g"]].map(([l,v,u])=>(
           <div key={l} style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:500}}>{v}{u}</div><div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:3}}>{l}</div></div>
@@ -379,7 +385,7 @@ function RecipeDetail({recipe,onClose,onDelete}) {
             </div>
           ))}
           <h3 style={{fontSize:13,fontWeight:500,margin:"20px 0 12px"}}>Method</h3>
-          {recipe.method.map((step,i)=>(
+          {method.map((step,i)=>(
             <div key={i} style={{display:"flex",gap:10,marginBottom:10,fontSize:12}}>
               <span style={{width:20,height:20,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,flexShrink:0}}>{i+1}</span>
               <span style={{color:"var(--color-text-secondary)",lineHeight:1.6}}>{step}</span>
@@ -407,7 +413,7 @@ function RecipeDetail({recipe,onClose,onDelete}) {
 // ─── Recipe Upload Form ─────────────────────────────────────────────────────────
 const EMOJIS = ["🥣","🥗","🍖","🐟","🍳","🥩","🍲","🌾","🥤","🍦","🍱","🥣","🌯","🥞","🍚","🫙","🍝","🥘","🫕","🥙","🌮","🍜","🫐","🍱","🧆"];
 
-function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
+function RecipeUploader({onSave,onClose}) {
   const [form,setForm] = useState({name:"",cat:"Breakfast",goal:["muscle_gain"],prep:10,cook:15,serves:1,emoji:"🥗",desc:"",tags:""});
   const [ings,setIngs] = useState([]);
   const [method,setMethod] = useState([""]);
@@ -441,7 +447,7 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
     setTimeout(()=>{setSaved(false);onClose();},1200);
   }
 
-  const filtered = search.length>1 ? ingredients.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12) : [];
+  const filtered = search.length>1 ? BASE_ING.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12) : [];
 
   return (
     <div style={{...crd,borderRadius:tk.rXl,marginTop:16}}>
@@ -592,8 +598,9 @@ export default function BurntCaloriesApp() {
   const [tab,setTab]   = useState("dashboard");
   const [profile,setProfile] = useState({name:"Paul",gender:"male",age:"40",weight:"90",height:"180",goal:"fat_loss",activityLevel:"very"});
   const [macros,setMacros] = useState(null);
-  const [ingredients,setIngredients] = useState(BASE_ING);
-  const [recipes,setRecipes] = useState(SEED_RECIPES);
+  const [recipes,setRecipes] = useState(()=>{
+    try { const s=window.storage; return SEED_RECIPES; } catch(e){ return SEED_RECIPES; }
+  });
   const [selRecipe,setSelRecipe] = useState(null);
   const [showUploader,setShowUploader] = useState(false);
   const [recCat,setRecCat]    = useState("All");
@@ -616,31 +623,20 @@ export default function BurntCaloriesApp() {
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
 
+  // Persist recipes to artifact storage
   useEffect(()=>{
-    async function loadDb() {
-      try {
-        const [{data:ings,error:ie},{data:recs,error:re},{data:cls,error:ce}] = await Promise.all([
-          supabase.from('ingredients').select('*').order('id'),
-          supabase.from('recipes').select('*').order('id'),
-          supabase.from('clients').select('*').order('id'),
-        ]);
-        if(!ie && ings?.length) setIngredients(ings);
-        if(!re && recs?.length) setRecipes(recs);
-        if(!ce && cls?.length) setClients(cls.map(c=>({...c,activityLevel:c.activity_level})));
-      } catch(e){}
-    }
-    loadDb();
+    try { window.storage?.set("burntcalories_recipes",JSON.stringify(recipes)); } catch(e){}
+  },[recipes]);
+  useEffect(()=>{
+    try {
+      window.storage?.get("burntcalories_recipes").then(r=>{
+        if(r?.value){ const parsed=JSON.parse(r.value); if(parsed?.length) setRecipes(parsed); }
+      });
+    } catch(e){}
   },[]);
 
-  async function addRecipe(recipe) {
-    setRecipes(prev=>[...prev,recipe]);
-    try { await supabase.from('recipes').upsert(recipe,{onConflict:'id'}); } catch(e){}
-  }
-  async function deleteRecipe(id) {
-    setRecipes(prev=>prev.filter(r=>r.id!==id));
-    if(selRecipe?.id===id) setSelRecipe(null);
-    try { await supabase.from('recipes').delete().eq('id',id); } catch(e){}
-  }
+  function addRecipe(recipe) { setRecipes(prev=>[...prev,recipe]); }
+  function deleteRecipe(id) { setRecipes(prev=>prev.filter(r=>r.id!==id)); if(selRecipe?.id===id) setSelRecipe(null); }
 
   const filteredRecipes = useMemo(()=>recipes.filter(r=>{
     const mc=recCat==="All"||r.cat===recCat;
@@ -649,14 +645,14 @@ export default function BurntCaloriesApp() {
     return mc&&mg&&mt;
   }),[recipes,recCat,recGoal,recSearch]);
 
-  const ingCats = useMemo(()=>["All",...new Set(ingredients.map(i=>i.cat))],[ingredients]);
-  const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(ingredients.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingredients,ingCat]);
-  const filteredIngs = useMemo(()=>ingredients.filter(i=>{
+  const ingCats = useMemo(()=>["All",...new Set(BASE_ING.map(i=>i.cat))],[]);
+  const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(BASE_ING.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingCat]);
+  const filteredIngs = useMemo(()=>BASE_ING.filter(i=>{
     const mc=ingCat==="All"||i.cat===ingCat;
     const ms=ingSub==="All"||i.sub===ingSub;
     const mt=!ingSearch||i.name.toLowerCase().includes(ingSearch.toLowerCase())||i.sub.toLowerCase().includes(ingSearch.toLowerCase());
     return mc&&ms&&mt;
-  }),[ingredients,ingCat,ingSub,ingSearch]);
+  }),[ingCat,ingSub,ingSearch]);
 
   const builderTotals = useMemo(()=>{
     let cal=0,p=0,c=0,f=0,fi=0;
@@ -746,7 +742,7 @@ export default function BurntCaloriesApp() {
             </div>
           </div>
           <div style={crd}>
-            <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 16px"}}>6-meal ZSF daily structure</h2>
+            <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 16px"}}>6-meal daily performance structure</h2>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>
               {[{label:"Meal 1 — Pre-gym",time:"6:30 am",desc:"Oats · egg · WPI",pct:0.20},{label:"Meal 2 — Post-gym",time:"9:00 am",desc:"Eggs · rice · protein",pct:0.22},{label:"Meal 3 — Lunch",time:"12:30 pm",desc:"Chicken or steak salad",pct:0.20},{label:"Meal 4 — Afternoon",time:"3:30 pm",desc:"Steak or chicken · veg",pct:0.18},{label:"Meal 5 — Dinner",time:"6:30 pm",desc:"Turkey bol · sweet potato",pct:0.15},{label:"Meal 6 — Night",time:"9:00 pm",desc:"Protein shake or cottage cheese",pct:0.05}].map((m,i)=>(
                 <div key={i} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:12}}>
@@ -851,7 +847,7 @@ export default function BurntCaloriesApp() {
             {showUploader?"Cancel":"+ Add recipe"}
           </button>
         </div>
-        {showUploader&&<RecipeUploader ingredients={ingredients} onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
+        {showUploader&&<RecipeUploader onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
         {!showUploader&&<>
           <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
             <input value={recSearch} onChange={e=>setRecSearch(e.target.value)} placeholder="Search recipes…" style={{flex:1,minWidth:180}}/>
@@ -879,12 +875,12 @@ export default function BurntCaloriesApp() {
       {Nav}{wrap(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
           <div>
-            <Hdr title="Custom meal builder" sub={`Build any meal from ${ingredients.length} ingredients and get instant macro breakdown · Burnt Calories`}/>
+            <Hdr title="Custom meal builder" sub={`Build any meal from ${BASE_ING.length} ingredients and get instant macro breakdown · Burnt Calories`}/>
             <div style={crd}>
               <div style={{marginBottom:14}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Meal name</label><input value={builderName} onChange={e=>setBuilderName(e.target.value)} placeholder="e.g. Post-workout bowl" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{marginBottom:12}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Find ingredient</label><input value={builderSearch} onChange={e=>setBuilderSearch(e.target.value)} placeholder="Type name, category or subcategory…" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{maxHeight:300,overflowY:"auto",border:tk.bd,borderRadius:tk.r}}>
-                {ingredients.filter(i=>!builderSearch||i.name.toLowerCase().includes(builderSearch.toLowerCase())||i.sub.toLowerCase().includes(builderSearch.toLowerCase())).slice(0,50).map(ing=>(
+                {BASE_ING.filter(i=>!builderSearch||i.name.toLowerCase().includes(builderSearch.toLowerCase())||i.sub.toLowerCase().includes(builderSearch.toLowerCase())).slice(0,50).map(ing=>(
                   <div key={ing.id} onClick={()=>{if(!builderIngs.find(b=>b.id===ing.id))setBuilderIngs(b=>[...b,{id:ing.id,amt:100}]);}} style={{padding:"9px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}
                     onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
                     onMouseLeave={e=>e.currentTarget.style.background=""}>
@@ -995,16 +991,7 @@ export default function BurntCaloriesApp() {
                   </div>
                 );
               })}
-              <button onClick={async()=>{
-                const draft={name:"New client",age:30,weight:75,height:175,gender:"male",goal:"fat_loss",activity_level:"moderate"};
-                try {
-                  const {data,error}=await supabase.from('clients').insert([draft]).select().single();
-                  if(!error&&data){const nc={...data,activityLevel:data.activity_level};setClients(cs=>[...cs,nc]);setSelClient(nc);}
-                  else throw error;
-                } catch(e) {
-                  const nc={id:Date.now(),...draft,activityLevel:"moderate"};setClients(cs=>[...cs,nc]);setSelClient(nc);
-                }
-              }} style={{padding:12,border:"0.5px dashed var(--color-border-secondary)",borderRadius:tk.rLg,cursor:"pointer",fontSize:12,color:"var(--color-text-secondary)",background:"transparent"}}>+ Add new client</button>
+              <button onClick={()=>{const nc={id:Date.now(),name:"New client",age:30,weight:75,height:175,gender:"male",goal:"fat_loss",activityLevel:"moderate"};setClients(cs=>[...cs,nc]);setSelClient(nc);}} style={{padding:12,border:"0.5px dashed var(--color-border-secondary)",borderRadius:tk.rLg,cursor:"pointer",fontSize:12,color:"var(--color-text-secondary)",background:"transparent"}}>+ Add new client</button>
             </div>
           </div>
           {selClient&&(()=>{
@@ -1041,7 +1028,7 @@ export default function BurntCaloriesApp() {
   if(tab==="workouts") return (
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(<>
-        <Hdr title="Workout protocols" sub="ZSF 6-day training split · 3×12 · 60–70% 1RM · 2 min rest · Burnt Calories performance program"/>
+        <Hdr title="Workout protocols" sub="Burnt Calories 6-day training split · 3×12 · 60–70% 1RM · 2 min rest · Burnt Calories performance program"/>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:14}}>
           {WORKOUTS.map(d=>(
             <div key={d.day} style={crd}>
