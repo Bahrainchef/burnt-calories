@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   description:
     "Personalised macro tracking, recipe library, ingredient database, and performance coaching built around the ZSF protocol.",
   metadataBase: new URL("https://burntcalories.com"),
+  icons: {
+    icon: "/Burnt_Calories_Favicon.png",
+    apple: "/Burnt_Calories_Favicon.png",
+  },
 };
 
 export default function RootLayout({
