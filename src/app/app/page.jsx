@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/lib/supabase";
 
 // ─── Design tokens — Burnt Calories brand ──────────────────────────────────────
 // Logo: flame orange #E8621A · leaf green #4A7C3F · charcoal #4A4A4A
@@ -615,17 +616,28 @@ export default function BurntCaloriesApp() {
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
 
   useEffect(()=>{
-    try { localStorage.setItem("burntcalories_recipes",JSON.stringify(recipes)); } catch(e){}
-  },[recipes]);
-  useEffect(()=>{
-    try {
-      const stored=localStorage.getItem("burntcalories_recipes");
-      if(stored){ const parsed=JSON.parse(stored); if(parsed?.length) setRecipes(parsed); }
-    } catch(e){}
+    async function loadDb() {
+      try {
+        const [{data:recs,error:re},{data:cls,error:ce}] = await Promise.all([
+          supabase.from('recipes').select('*').order('id'),
+          supabase.from('clients').select('*').order('id'),
+        ]);
+        if(!re && recs?.length) setRecipes(recs);
+        if(!ce && cls?.length) setClients(cls.map(c=>({...c,activityLevel:c.activity_level})));
+      } catch(e){}
+    }
+    loadDb();
   },[]);
 
-  function addRecipe(recipe) { setRecipes(prev=>[...prev,recipe]); }
-  function deleteRecipe(id) { setRecipes(prev=>prev.filter(r=>r.id!==id)); if(selRecipe?.id===id) setSelRecipe(null); }
+  async function addRecipe(recipe) {
+    setRecipes(prev=>[...prev,recipe]);
+    try { await supabase.from('recipes').upsert(recipe,{onConflict:'id'}); } catch(e){}
+  }
+  async function deleteRecipe(id) {
+    setRecipes(prev=>prev.filter(r=>r.id!==id));
+    if(selRecipe?.id===id) setSelRecipe(null);
+    try { await supabase.from('recipes').delete().eq('id',id); } catch(e){}
+  }
 
   const filteredRecipes = useMemo(()=>recipes.filter(r=>{
     const mc=recCat==="All"||r.cat===recCat;
@@ -980,7 +992,16 @@ export default function BurntCaloriesApp() {
                   </div>
                 );
               })}
-              <button onClick={()=>{const nc={id:Date.now(),name:"New client",age:30,weight:75,height:175,gender:"male",goal:"fat_loss",activityLevel:"moderate"};setClients(cs=>[...cs,nc]);setSelClient(nc);}} style={{padding:12,border:"0.5px dashed var(--color-border-secondary)",borderRadius:tk.rLg,cursor:"pointer",fontSize:12,color:"var(--color-text-secondary)",background:"transparent"}}>+ Add new client</button>
+              <button onClick={async()=>{
+                const draft={name:"New client",age:30,weight:75,height:175,gender:"male",goal:"fat_loss",activity_level:"moderate"};
+                try {
+                  const {data,error}=await supabase.from('clients').insert([draft]).select().single();
+                  if(!error&&data){const nc={...data,activityLevel:data.activity_level};setClients(cs=>[...cs,nc]);setSelClient(nc);}
+                  else throw error;
+                } catch(e) {
+                  const nc={id:Date.now(),...draft,activityLevel:"moderate"};setClients(cs=>[...cs,nc]);setSelClient(nc);
+                }
+              }} style={{padding:12,border:"0.5px dashed var(--color-border-secondary)",borderRadius:tk.rLg,cursor:"pointer",fontSize:12,color:"var(--color-text-secondary)",background:"transparent"}}>+ Add new client</button>
             </div>
           </div>
           {selClient&&(()=>{
