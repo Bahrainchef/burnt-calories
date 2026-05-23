@@ -335,7 +335,7 @@ function RecipeCard({recipe,onSelect,selected}) {
       </div>
       <div style={{fontSize:13,fontWeight:500,lineHeight:1.3,marginBottom:4}}>{recipe.name}</div>
       <div style={{fontSize:11,color:"var(--color-text-secondary)",lineHeight:1.5,marginBottom:10}}>{recipe.desc.slice(0,72)}…</div>
-      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{recipe.tags.slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{safeParse(recipe.tags,[]).slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",paddingTop:10,borderTop:tk.bd}}>
         {[["kcal",m.cal,tk.teal],["P",m.p+"g",tk.blue],["C",m.c+"g",tk.green],["F",m.f+"g",tk.coral]].map(([l,v,c])=>(
           <div key={l} style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:500,color:c}}>{v}</div><div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:2}}>{l}</div></div>
@@ -413,7 +413,7 @@ function RecipeDetail({recipe,onClose,onDelete}) {
 // ─── Recipe Upload Form ─────────────────────────────────────────────────────────
 const EMOJIS = ["🥣","🥗","🍖","🐟","🍳","🥩","🍲","🌾","🥤","🍦","🍱","🥣","🌯","🥞","🍚","🫙","🍝","🥘","🫕","🥙","🌮","🍜","🫐","🍱","🧆"];
 
-function RecipeUploader({onSave,onClose}) {
+function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
   const [form,setForm] = useState({name:"",cat:"Breakfast",goal:["muscle_gain"],prep:10,cook:15,serves:1,emoji:"🥗",desc:"",tags:""});
   const [ings,setIngs] = useState([]);
   const [method,setMethod] = useState([""]);
@@ -447,7 +447,7 @@ function RecipeUploader({onSave,onClose}) {
     setTimeout(()=>{setSaved(false);onClose();},1200);
   }
 
-  const filtered = search.length>1 ? BASE_ING.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12) : [];
+  const filtered = search.length>1 ? ingredients.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12) : [];
 
   return (
     <div style={{...crd,borderRadius:tk.rXl,marginTop:16}}>
@@ -593,6 +593,16 @@ function RecipeUploader({onSave,onClose}) {
   );
 }
 
+// ─── Supabase helpers ───────────────────────────────────────────────────────────
+function safeParse(val, fallback=[]) {
+  if(Array.isArray(val)) return val;
+  if(typeof val==='string'){ try{ return JSON.parse(val); }catch(e){ return fallback; } }
+  return fallback;
+}
+function normalizeRecipe(r) {
+  return {...r, ings:safeParse(r.ings,[]), tags:safeParse(r.tags,[]), method:safeParse(r.method,[]), goal:safeParse(r.goal,[])};
+}
+
 // ─── Main app ───────────────────────────────────────────────────────────────────
 export default function BurntCaloriesApp() {
   const [tab,setTab]   = useState("dashboard");
@@ -609,6 +619,7 @@ export default function BurntCaloriesApp() {
   const [ingSearch,setIngSearch] = useState("");
   const [ingCat,setIngCat]    = useState("All");
   const [ingSub,setIngSub]    = useState("All");
+  const [ingredients,setIngredients] = useState(BASE_ING);
   const [builderIngs,setBuilderIngs] = useState([]);
   const [builderName,setBuilderName] = useState("");
   const [builderSearch,setBuilderSearch] = useState("");
@@ -623,31 +634,42 @@ export default function BurntCaloriesApp() {
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
 
-  // Persist recipes to artifact storage
   useEffect(()=>{
-    try { window.storage?.set("burntcalories_recipes",JSON.stringify(recipes)); } catch(e){}
-  },[recipes]);
-  useEffect(()=>{
-    try {
-      window.storage?.get("burntcalories_recipes").then(r=>{
-        if(r?.value){ const parsed=JSON.parse(r.value); if(parsed?.length) setRecipes(parsed); }
-      });
-    } catch(e){}
+    async function loadDb() {
+      try {
+        const [{data:ings,error:ie},{data:recs,error:re},{data:cls,error:ce}] = await Promise.all([
+          supabase.from('ingredients').select('*').order('id'),
+          supabase.from('recipes').select('*').order('id'),
+          supabase.from('clients').select('*').order('id'),
+        ]);
+        if(!ie && ings?.length) setIngredients(ings);
+        if(!re && recs?.length) setRecipes(recs.map(normalizeRecipe));
+        if(!ce && cls?.length) setClients(cls.map(c=>({...c,activityLevel:c.activity_level})));
+      } catch(e){}
+    }
+    loadDb();
   },[]);
 
-  function addRecipe(recipe) { setRecipes(prev=>[...prev,recipe]); }
-  function deleteRecipe(id) { setRecipes(prev=>prev.filter(r=>r.id!==id)); if(selRecipe?.id===id) setSelRecipe(null); }
+  async function addRecipe(recipe) {
+    setRecipes(prev=>[...prev,recipe]);
+    try { await supabase.from('recipes').upsert(recipe,{onConflict:'id'}); } catch(e){}
+  }
+  async function deleteRecipe(id) {
+    setRecipes(prev=>prev.filter(r=>r.id!==id));
+    if(selRecipe?.id===id) setSelRecipe(null);
+    try { await supabase.from('recipes').delete().eq('id',id); } catch(e){}
+  }
 
   const filteredRecipes = useMemo(()=>recipes.filter(r=>{
     const mc=recCat==="All"||r.cat===recCat;
-    const mg=recGoal==="all"||r.goal.includes(recGoal);
+    const mg=recGoal==="all"||safeParse(r.goal,[]).includes(recGoal);
     const mt=!recSearch||r.name.toLowerCase().includes(recSearch.toLowerCase());
     return mc&&mg&&mt;
   }),[recipes,recCat,recGoal,recSearch]);
 
-  const ingCats = useMemo(()=>["All",...new Set(BASE_ING.map(i=>i.cat))],[]);
-  const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(BASE_ING.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingCat]);
-  const filteredIngs = useMemo(()=>BASE_ING.filter(i=>{
+  const ingCats = useMemo(()=>["All",...new Set(ingredients.map(i=>i.cat))],[ingredients]);
+  const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(ingredients.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingCat,ingredients]);
+  const filteredIngs = useMemo(()=>ingredients.filter(i=>{
     const mc=ingCat==="All"||i.cat===ingCat;
     const ms=ingSub==="All"||i.sub===ingSub;
     const mt=!ingSearch||i.name.toLowerCase().includes(ingSearch.toLowerCase())||i.sub.toLowerCase().includes(ingSearch.toLowerCase());
@@ -714,7 +736,7 @@ export default function BurntCaloriesApp() {
   if(tab==="dashboard") return (
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(<>
-        <Hdr title="Your dashboard" sub={`${BASE_ING.length} ingredients · ${recipes.length} recipes · personalised for ${profile.name} · Burnt Calories`}/>
+        <Hdr title="Your dashboard" sub={`${ingredients.length} ingredients · ${recipes.length} recipes · personalised for ${profile.name} · Burnt Calories`}/>
         {macros?(<>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(145px,1fr))",gap:10,marginBottom:20}}>
             <Stat label="Daily calories" value={macros.targetCal} sub="target" color={tk.teal}/>
@@ -847,7 +869,7 @@ export default function BurntCaloriesApp() {
             {showUploader?"Cancel":"+ Add recipe"}
           </button>
         </div>
-        {showUploader&&<RecipeUploader onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
+        {showUploader&&<RecipeUploader ingredients={ingredients} onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
         {!showUploader&&<>
           <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
             <input value={recSearch} onChange={e=>setRecSearch(e.target.value)} placeholder="Search recipes…" style={{flex:1,minWidth:180}}/>
@@ -875,12 +897,12 @@ export default function BurntCaloriesApp() {
       {Nav}{wrap(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
           <div>
-            <Hdr title="Custom meal builder" sub={`Build any meal from ${BASE_ING.length} ingredients and get instant macro breakdown · Burnt Calories`}/>
+            <Hdr title="Custom meal builder" sub={`Build any meal from ${ingredients.length} ingredients and get instant macro breakdown · Burnt Calories`}/>
             <div style={crd}>
               <div style={{marginBottom:14}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Meal name</label><input value={builderName} onChange={e=>setBuilderName(e.target.value)} placeholder="e.g. Post-workout bowl" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{marginBottom:12}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Find ingredient</label><input value={builderSearch} onChange={e=>setBuilderSearch(e.target.value)} placeholder="Type name, category or subcategory…" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{maxHeight:300,overflowY:"auto",border:tk.bd,borderRadius:tk.r}}>
-                {BASE_ING.filter(i=>!builderSearch||i.name.toLowerCase().includes(builderSearch.toLowerCase())||i.sub.toLowerCase().includes(builderSearch.toLowerCase())).slice(0,50).map(ing=>(
+                {ingredients.filter(i=>!builderSearch||i.name.toLowerCase().includes(builderSearch.toLowerCase())||i.sub.toLowerCase().includes(builderSearch.toLowerCase())).slice(0,50).map(ing=>(
                   <div key={ing.id} onClick={()=>{if(!builderIngs.find(b=>b.id===ing.id))setBuilderIngs(b=>[...b,{id:ing.id,amt:100}]);}} style={{padding:"9px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}
                     onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
                     onMouseLeave={e=>e.currentTarget.style.background=""}>
@@ -945,7 +967,7 @@ export default function BurntCaloriesApp() {
   if(tab==="ingredients") return (
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(<>
-        <Hdr title="Master ingredient library" sub={`${BASE_ING.length} ingredients · calories, macros, fibre · 5 health benefits each · Burnt Calories`}/>
+        <Hdr title="Master ingredient library" sub={`${ingredients.length} ingredients · calories, macros, fibre · 5 health benefits each · Burnt Calories`}/>
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
           <input value={ingSearch} onChange={e=>setIngSearch(e.target.value)} placeholder="Search ingredients or subcategories…" style={{flex:1,minWidth:200}}/>
           <select value={ingCat} onChange={e=>{setIngCat(e.target.value);setIngSub("All");}} style={{minWidth:150}}>{ingCats.map(c=><option key={c}>{c}</option>)}</select>
