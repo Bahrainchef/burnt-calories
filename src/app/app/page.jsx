@@ -866,21 +866,25 @@ export default function BurntCaloriesApp() {
   ];
 
   const Nav = (
-    <div style={{background:"#2D5A27",position:"sticky",top:0,zIndex:100}}>
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/logo-transparent.png" alt="Burnt Calories" style={{height:52,display:"block",filter:"brightness(10)"}}/>
-          </div>
+    <div style={{position:"sticky",top:0,zIndex:100}}>
+      {/* Top tier — white, logo + user info */}
+      <div style={{background:"#ffffff",borderBottom:"1px solid #e8e8e8"}}>
+        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
+          <img src="/logo.png" alt="Burnt Calories" style={{height:48,display:"block"}}/>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:12,color:"rgba(255,255,255,0.75)"}}>Hi, {profile.name}</span>
-            {macros&&<Pill text={macros.targetCal+" kcal"} color="#ffffff" bg="rgba(255,255,255,0.18)"/>}
+            <span style={{fontSize:13,color:"#4A4A4A",fontWeight:500}}>Hi, {profile.name}</span>
+            {macros&&<Pill text={macros.targetCal+" kcal"} color={tk.tealText} bg={tk.tealSurf}/>}
           </div>
         </div>
-        <div style={{display:"flex",overflowX:"auto"}}>
+      </div>
+      {/* Bottom tier — forest green, navigation tabs */}
+      <div style={{background:"#2D5A27"}}>
+        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 8px",display:"flex",justifyContent:"space-evenly",alignItems:"stretch",height:44}}>
           {TABS.map(tb=>(
             <button key={tb.id} onClick={()=>{setTab(tb.id);setSelRecipe(null);setShowUploader(false);}}
-              style={{padding:"8px 14px",fontSize:12,whiteSpace:"nowrap",borderRadius:0,background:"transparent",color:tab===tb.id?"#ffffff":"rgba(255,255,255,0.60)",fontWeight:tab===tb.id?500:400,borderBottom:tab===tb.id?`2px solid #E8621A`:"2px solid transparent",cursor:"pointer"}}>
+              style={{flex:1,padding:"0 18px",fontSize:13,whiteSpace:"nowrap",borderRadius:0,background:tab===tb.id?"rgba(255,255,255,0.10)":"transparent",color:"#ffffff",fontWeight:500,letterSpacing:"0.04em",borderBottom:tab===tb.id?"2px solid #E8621A":"2px solid transparent",cursor:"pointer",transition:"background 0.15s",minHeight:44}}
+              onMouseEnter={e=>{ if(tab!==tb.id) e.currentTarget.style.background="rgba(255,255,255,0.15)"; }}
+              onMouseLeave={e=>{ if(tab!==tb.id) e.currentTarget.style.background="transparent"; }}>
               {tb.icon} {tb.label}
             </button>
           ))}
