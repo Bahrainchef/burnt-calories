@@ -20,13 +20,9 @@ export default function Home() {
       />
 
       <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-2xl">
-        {/* Logo mark */}
+        {/* Logo */}
         <div className="mb-8">
-          <svg width="56" height="64" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 26 Q7 18 11 12 Q9 20 13 22Z" fill="#4A7C3F" />
-            <path d="M14 2 Q8 10 9 18 Q10 26 14 28 Q18 26 19 18 Q20 10 14 2Z" fill="#E8621A" />
-            <path d="M14 8 Q11 14 12 20 Q13 25 14 26 Q16 24 16 20 Q17 14 14 8Z" fill="#F5A623" />
-          </svg>
+          <img src="/logo.png" alt="Burnt Calories" style={{ maxWidth: 220, display: "block" }} />
         </div>
 
         {/* Wordmark */}

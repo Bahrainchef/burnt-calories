@@ -3,6 +3,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
+const parseArr = (f) => {
+  if (Array.isArray(f)) return f
+  if (typeof f === 'string') { try { return JSON.parse(f) } catch { return [] } }
+  return []
+}
+
 // ─── Design tokens — Burnt Calories brand ──────────────────────────────────────
 // Logo: flame orange #E8621A · leaf green #4A7C3F · charcoal #4A4A4A
 const tk = {
@@ -301,7 +307,7 @@ function ingMacros({id,amt}) {
 }
 function recipeTotals(recipe) {
   let cal=0,p=0,c=0,f=0,fi=0;
-  const ings = safeParse(recipe.ings, []);
+  const ings = parseArr(recipe.ings);
   ings.forEach(ri=>{const m=ingMacros(ri);cal+=m.cal;p+=m.p;c+=m.c;f+=m.f;fi+=m.fi;});
   const s=recipe.serves||1;
   return {cal:Math.round(cal/s),p:Math.round(p/s),c:Math.round(c/s),f:Math.round(f/s),fi:Math.round(fi/s)};
@@ -341,7 +347,7 @@ function RecipeCard({recipe,onSelect,selected}) {
         </div>
         <div style={{fontSize:13,fontWeight:500,lineHeight:1.3,marginBottom:4}}>{recipe.name}</div>
         <div style={{fontSize:11,color:"var(--color-text-secondary)",lineHeight:1.5,marginBottom:10}}>{recipe.desc.slice(0,72)}…</div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{safeParse(recipe.tags,[]).slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{parseArr(recipe.tags).slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",paddingTop:10,borderTop:tk.bd}}>
           {[["kcal",m.cal,tk.teal],["P",m.p+"g",tk.blue],["C",m.c+"g",tk.green],["F",m.f+"g",tk.coral]].map(([l,v,c])=>(
             <div key={l} style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:500,color:c}}>{v}</div><div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:2}}>{l}</div></div>
@@ -355,14 +361,71 @@ function RecipeCard({recipe,onSelect,selected}) {
 // ─── Recipe detail ──────────────────────────────────────────────────────────────
 function RecipeDetail({recipe,onClose,onDelete}) {
   if(!recipe) return null;
-  const ings   = safeParse(recipe.ings,   []);
-  const tags   = safeParse(recipe.tags,   []);
-  const method = safeParse(recipe.method, []);
-  const goal   = safeParse(recipe.goal,   []);
+  const ings   = parseArr(recipe.ings);
+  const tags   = parseArr(recipe.tags);
+  const method = parseArr(recipe.method);
+  const goal   = parseArr(recipe.goal);
   const safeRecipe = {...recipe, ings, tags, method, goal};
   const m=recipeTotals(safeRecipe);
   const resolved=ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
   const hasPhoto=!!recipe.photo_url;
+
+  function handlePrint() {
+    const benefitsHtml = resolved.map(ing=>
+      `<div style="margin-bottom:12px;page-break-inside:avoid">
+        <div style="font-weight:600;font-size:12px;margin-bottom:4px">${ing.name}</div>
+        ${ing.benefits.slice(0,3).map(b=>`<div style="font-size:11px;color:#555;margin-bottom:2px">✓ ${b}</div>`).join('')}
+      </div>`
+    ).join('');
+    const ingsHtml = resolved.map(ing=>
+      `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee;font-size:12px">
+        <span><strong>${ing.name}</strong> <span style="color:#888">${ing.amt}g</span></span>
+        <span style="color:#666">${Math.round(ing.mx.cal)} kcal · <span style="color:#4A7C3F">${Math.round(ing.mx.p)}P</span></span>
+      </div>`
+    ).join('');
+    const methodHtml = method.map((step,i)=>
+      `<div style="display:flex;gap:10px;margin-bottom:10px;font-size:12px;align-items:flex-start">
+        <span style="min-width:22px;height:22px;border-radius:50%;background:#FDEEE6;color:#7A2B07;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0">${i+1}</span>
+        <span style="color:#444;line-height:1.6">${step}</span>
+      </div>`
+    ).join('');
+    const w = window.open('','_blank','width=800,height=900');
+    w.document.write(`<!DOCTYPE html><html><head><title>${recipe.name} — Burnt Calories</title>
+      <style>
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:680px;margin:0 auto;padding:32px 24px;color:#1a1a1a}
+        h1{font-size:24px;margin:0 0 4px}
+        .meta{font-size:12px;color:#888;margin-bottom:20px}
+        .macros{display:grid;grid-template-columns:repeat(5,1fr);background:#f7f4f0;border-radius:10px;padding:16px;margin-bottom:24px;text-align:center}
+        .macros .val{font-size:20px;font-weight:600}
+        .macros .lbl{font-size:10px;color:#888;margin-top:3px}
+        .cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+        h3{font-size:13px;font-weight:600;margin:0 0 12px;color:#333}
+        .logo{margin-top:40px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999}
+        .logo strong{color:#E8621A}
+        @media print{body{padding:16px}button{display:none}}
+      </style>
+    </head><body>
+      ${hasPhoto?`<img src="${recipe.photo_url}" style="width:100%;height:200px;object-fit:cover;border-radius:10px;margin-bottom:20px;display:block"/>`:
+        `<div style="font-size:48px;text-align:center;margin-bottom:12px">${recipe.emoji}</div>`}
+      <h1>${recipe.name}</h1>
+      <div class="meta">${recipe.cat} · ${recipe.prep} min prep · ${recipe.cook} min cook · serves ${recipe.serves}${tags.length?` · ${tags.join(', ')}`:''}
+      </div>
+      <div class="macros">
+        ${[['Calories',m.cal,''],['Protein',m.p,'g'],['Carbs',m.c,'g'],['Fat',m.f,'g'],['Fibre',m.fi,'g']].map(([l,v,u])=>
+          `<div><div class="val">${v}${u}</div><div class="lbl">${l}</div></div>`).join('')}
+      </div>
+      <div class="cols">
+        <div>
+          <h3>Ingredients</h3>${ingsHtml}
+          <h3 style="margin-top:20px">Method</h3>${methodHtml}
+        </div>
+        <div><h3>Health Benefits</h3>${benefitsHtml}</div>
+      </div>
+      <div class="logo"><strong>Burnt Calories</strong> — Nutrition &amp; Performance · burntcalories.com</div>
+      <div style="text-align:center;margin-top:20px"><button onclick="window.print()" style="padding:10px 24px;background:#E8621A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Print / Save PDF</button></div>
+    </body></html>`);
+    w.document.close();
+  }
   return (
     <div style={{marginTop:16,...crd,borderRadius:tk.rXl,padding:0,overflow:"hidden"}}>
       {hasPhoto && <img src={recipe.photo_url} alt={recipe.name} style={{width:"100%",height:240,objectFit:"cover",display:"block"}}/>}
@@ -374,6 +437,7 @@ function RecipeDetail({recipe,onClose,onDelete}) {
             <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{recipe.cat} · {recipe.prep} min prep · {recipe.cook} min cook · serves {recipe.serves}</div>
           </div>
           <div style={{display:"flex",gap:8}}>
+            <button onClick={handlePrint} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,background:tk.tealSurf,color:tk.tealText,border:`1px solid rgba(232,98,26,0.22)`}}>🖨 Print</button>
             {onDelete&&<button onClick={()=>onDelete(recipe.id)} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,color:tk.red}}>Delete</button>}
             <button onClick={onClose} style={{padding:"6px 14px",borderRadius:tk.r,cursor:"pointer",fontSize:12}}>Close ✕</button>
           </div>
@@ -657,7 +721,7 @@ function safeParse(val, fallback=[]) {
   return fallback;
 }
 function normalizeRecipe(r) {
-  return {...r, ings:safeParse(r.ings,[]), tags:safeParse(r.tags,[]), method:safeParse(r.method,[]), goal:safeParse(r.goal,[])};
+  return {...r, ings:parseArr(r.ings), tags:parseArr(r.tags), method:parseArr(r.method), goal:parseArr(r.goal)};
 }
 
 // ─── Main app ───────────────────────────────────────────────────────────────────
@@ -734,7 +798,7 @@ export default function BurntCaloriesApp() {
 
   const filteredRecipes = useMemo(()=>recipes.filter(r=>{
     const mc=recCat==="All"||r.cat===recCat;
-    const mg=recGoal==="all"||safeParse(r.goal,[]).includes(recGoal);
+    const mg=recGoal==="all"||parseArr(r.goal).includes(recGoal);
     const mt=!recSearch||r.name.toLowerCase().includes(recSearch.toLowerCase());
     return mc&&mg&&mt;
   }),[recipes,recCat,recGoal,recSearch]);
@@ -769,15 +833,7 @@ export default function BurntCaloriesApp() {
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",height:52}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            {/* Burnt Calories flame + leaf logo mark */}
-            <svg width="28" height="32" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Leaf (green) */}
-              <path d="M10 26 Q7 18 11 12 Q9 20 13 22Z" fill="#4A7C3F"/>
-              {/* Flame outer (orange) */}
-              <path d="M14 2 Q8 10 9 18 Q10 26 14 28 Q18 26 19 18 Q20 10 14 2Z" fill="#E8621A"/>
-              {/* Flame inner highlight (amber) */}
-              <path d="M14 8 Q11 14 12 20 Q13 25 14 26 Q16 24 16 20 Q17 14 14 8Z" fill="#F5A623"/>
-            </svg>
+            <img src="/logo.png" alt="Burnt Calories" style={{height:32,display:"block"}}/>
             <div style={{display:"flex",alignItems:"baseline",gap:8}}>
               <span style={{fontSize:14,fontWeight:600,letterSpacing:"-0.02em",color:"var(--color-text-primary)"}}>
                 <span style={{color:"#E8621A"}}>Burnt</span> Calories
@@ -1173,7 +1229,7 @@ export default function BurntCaloriesApp() {
                 <div style={crd}>
                   <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Recommended recipes for {clientDraft.name}</h3>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
-                    {recipes.filter(r=>safeParse(r.goal,[]).includes(clientDraft.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
+                    {recipes.filter(r=>parseArr(r.goal).includes(clientDraft.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
                   </div>
                   {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)}/>}
                 </div>
