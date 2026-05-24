@@ -12,13 +12,14 @@ const parseArr = (f) => {
 // ─── Design tokens — Burnt Calories brand ──────────────────────────────────────
 // Logo: flame orange #E8621A · leaf green #4A7C3F · charcoal #4A4A4A
 const tk = {
-  teal:"#E8621A", tealSurf:"#FDEEE6", tealText:"#7A2B07",
-  blue:"#4A7C3F", blueSurf:"#EAF3E6", blueText:"#243D1F",
-  coral:"#D85A30", coralSurf:"#FAECE7",
-  amber:"#C47C0A", amberSurf:"#FDF3DC",
-  green:"#4A7C3F", greenSurf:"#EAF3E6",
-  purple:"#7F77DD", purpleSurf:"#EEEDFE",
-  red:"#E24B4A", gray:"#888780",
+  teal:"#2D5A27",     tealSurf:"#EAF3DE", tealText:"#1A3A15",
+  blue:"#4A7C3F",     blueSurf:"#EAF3E6", blueText:"#243D1F",
+  coral:"#E8621A",    coralSurf:"#FDEEE6",
+  amber:"#C47C0A",    amberSurf:"#FDF3DC",
+  green:"#7AB648",    greenSurf:"#EAF3DE",
+  purple:"#7F77DD",   purpleSurf:"#EEEDFE",
+  red:"#E24B4A",      gray:"#888780",
+  flame:"#E8621A",
   bd:"0.5px solid var(--color-border-tertiary)",
   bdMed:"0.5px solid var(--color-border-secondary)",
   r:"var(--border-radius-md)", rLg:"var(--border-radius-lg)", rXl:"var(--border-radius-xl)",
@@ -337,7 +338,7 @@ function RecipeCard({recipe,onSelect,selected}) {
       onMouseEnter={e=>{if(!selected){e.currentTarget.style.borderColor="var(--color-border-secondary)";e.currentTarget.style.transform="translateY(-1px)";}}}
       onMouseLeave={e=>{if(!selected){e.currentTarget.style.borderColor="var(--color-border-tertiary)";e.currentTarget.style.transform="";}}}>
       {hasPhoto
-        ? <img src={recipe.photo_url} alt={recipe.name} style={{width:"100%",height:120,objectFit:"cover",display:"block"}}/>
+        ? <img src={recipe.photo_url} alt={recipe.name} style={{width:"100%",height:160,objectFit:"cover",display:"block"}}/>
         : <div style={{height:72,display:"flex",alignItems:"center",justifyContent:"center",background:"var(--color-background-secondary)",fontSize:32}}>{recipe.emoji}</div>
       }
       <div style={{padding:"14px 16px"}}>
@@ -708,7 +709,7 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
             )}
           </div>
 
-          <button onClick={save} disabled={uploading} style={{width:"100%",padding:"13px",background:saved?tk.green:tk.teal,color:"white",borderRadius:tk.rLg,cursor:uploading?"wait":"pointer",fontSize:14,fontWeight:600,border:"none",transition:"background 0.2s",opacity:uploading?0.75:1}}>
+          <button onClick={save} disabled={uploading} style={{width:"100%",padding:"13px",background:saved?"#4A7C3F":tk.coral,color:"white",borderRadius:tk.rLg,cursor:uploading?"wait":"pointer",fontSize:14,fontWeight:600,border:"none",transition:"background 0.2s",opacity:uploading?0.75:1}}>
             {uploading?"Uploading photo…":saved?"✓ Recipe saved!":"Save recipe"}
           </button>
           {(!form.name||ings.length===0)&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",textAlign:"center",marginTop:8}}>Add a name and at least one ingredient to save</div>}
@@ -865,21 +866,21 @@ export default function BurntCaloriesApp() {
   ];
 
   const Nav = (
-    <div style={{background:"var(--color-background-primary)",borderBottom:tk.bd,position:"sticky",top:0,zIndex:100}}>
+    <div style={{background:"#2D5A27",position:"sticky",top:0,zIndex:100}}>
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",height:52}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/logo-transparent.png" alt="Burnt Calories" style={{height:38,display:"block",filter:"contrast(1.1) brightness(1.05)"}}/>
+            <img src="/logo-transparent.png" alt="Burnt Calories" style={{height:52,display:"block",filter:"brightness(10)"}}/>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:12,color:"var(--color-text-secondary)"}}>Hi, {profile.name}</span>
-            {macros&&<Pill text={macros.targetCal+" kcal"} color={tk.tealText} bg={tk.tealSurf}/>}
+            <span style={{fontSize:12,color:"rgba(255,255,255,0.75)"}}>Hi, {profile.name}</span>
+            {macros&&<Pill text={macros.targetCal+" kcal"} color="#ffffff" bg="rgba(255,255,255,0.18)"/>}
           </div>
         </div>
         <div style={{display:"flex",overflowX:"auto"}}>
           {TABS.map(tb=>(
             <button key={tb.id} onClick={()=>{setTab(tb.id);setSelRecipe(null);setShowUploader(false);}}
-              style={{padding:"8px 14px",fontSize:12,whiteSpace:"nowrap",borderRadius:0,background:"transparent",color:tab===tb.id?"var(--color-text-primary)":"var(--color-text-secondary)",fontWeight:tab===tb.id?500:400,borderBottom:tab===tb.id?`2px solid ${tk.teal}`:"2px solid transparent",cursor:"pointer"}}>
+              style={{padding:"8px 14px",fontSize:12,whiteSpace:"nowrap",borderRadius:0,background:"transparent",color:tab===tb.id?"#ffffff":"rgba(255,255,255,0.60)",fontWeight:tab===tb.id?500:400,borderBottom:tab===tb.id?`2px solid #E8621A`:"2px solid transparent",cursor:"pointer"}}>
               {tb.icon} {tb.label}
             </button>
           ))}
@@ -1288,7 +1289,7 @@ export default function BurntCaloriesApp() {
                     </div>
                   )}
 
-                  <button onClick={saveClient} disabled={saving} style={{width:"100%",marginTop:14,padding:"13px",borderRadius:tk.rLg,cursor:saving?"default":"pointer",border:"none",background:saving?"#ccc":tk.teal,color:"white",fontWeight:600,fontSize:14,transition:"background 0.15s"}}>
+                  <button onClick={saveClient} disabled={saving} style={{width:"100%",marginTop:14,padding:"13px",borderRadius:tk.rLg,cursor:saving?"default":"pointer",border:"none",background:saving?"#ccc":tk.coral,color:"white",fontWeight:600,fontSize:14,transition:"background 0.15s"}}>
                     {saving?"Saving…":newClientMode?"Save new client":"Save changes"}
                   </button>
                 </div>
