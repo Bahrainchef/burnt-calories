@@ -764,9 +764,13 @@ export default function BurntCaloriesApp() {
   ]);
   const [selClient,setSelClient] = useState(null);
   const [clientDraft,setClientDraft] = useState(null);
+  const [newClientMode,setNewClientMode] = useState(false);
+  const [clientStatus,setClientStatus] = useState(null); // null | {type:'ok'|'err'|'saving', msg:string}
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
-  useEffect(()=>{ setClientDraft(selClient ? {...selClient} : null); },[selClient?.id]);
+  useEffect(()=>{
+    if(!newClientMode) setClientDraft(selClient ? {...selClient} : null);
+  },[selClient?.id]);
 
   useEffect(()=>{
     async function loadDb() {
@@ -795,16 +799,37 @@ export default function BurntCaloriesApp() {
   }
   async function saveClient() {
     if(!clientDraft) return;
-    const updated={...clientDraft};
-    setClients(prev=>prev.map(c=>c.id===updated.id?updated:c));
-    setSelClient(updated);
-    try {
-      await supabase.from('clients').upsert({
+    if(!clientDraft.name?.trim()||!clientDraft.age||!clientDraft.weight||!clientDraft.height) {
+      setClientStatus({type:'err',msg:'Please fill in name, age, weight and height.'});
+      return;
+    }
+    setClientStatus({type:'saving',msg:'Saving…'});
+    if(newClientMode) {
+      const payload={
+        name:clientDraft.name.trim(), age:+clientDraft.age, weight:+clientDraft.weight,
+        height:+clientDraft.height, gender:clientDraft.gender, goal:clientDraft.goal,
+        activity_level:clientDraft.activityLevel,
+      };
+      const {data,error}=await supabase.from('clients').insert(payload).select().single();
+      if(error){setClientStatus({type:'err',msg:'Save failed: '+error.message});return;}
+      const newC={...data,activityLevel:data.activity_level};
+      setClients(prev=>[...prev,newC]);
+      setSelClient(newC);
+      setNewClientMode(false);
+      setClientStatus({type:'ok',msg:'Client saved ✓'});
+    } else {
+      const updated={...clientDraft};
+      setClients(prev=>prev.map(c=>c.id===updated.id?updated:c));
+      setSelClient(updated);
+      const {error}=await supabase.from('clients').upsert({
         id:updated.id, name:updated.name, age:updated.age, weight:updated.weight,
         height:updated.height, gender:updated.gender, goal:updated.goal,
         activity_level:updated.activityLevel,
       },{onConflict:'id'});
-    } catch(e){}
+      if(error) setClientStatus({type:'err',msg:'Save failed: '+error.message});
+      else setClientStatus({type:'ok',msg:'Changes saved ✓'});
+    }
+    setTimeout(()=>setClientStatus(null),3000);
   }
 
   const filteredRecipes = useMemo(()=>recipes.filter(r=>{
@@ -1144,64 +1169,85 @@ export default function BurntCaloriesApp() {
   );
 
   // ── CLIENTS ──────────────────────────────────────────────────────────────────
-  if(tab==="clients") return (
+  if(tab==="clients") {
+    const showPanel = (selClient&&clientDraft)||newClientMode;
+    const inp2={width:"100%",boxSizing:"border-box",padding:"9px 12px",border:"1px solid #cccccc",borderRadius:tk.r,fontSize:13,background:"var(--color-background-primary)",color:"var(--color-text-primary)"};
+    const lbl2={fontSize:12,color:"#4A4A4A",display:"block",marginBottom:5,fontWeight:500};
+    const openNewClient=()=>{
+      setNewClientMode(true);
+      setSelClient(null);
+      setClientDraft({id:null,name:"",age:"",weight:"",height:"",gender:"male",goal:"fat_loss",activityLevel:"moderate"});
+      setClientStatus(null);
+    };
+    return (
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(
-        <div style={{display:"grid",gridTemplateColumns:selClient?"260px 1fr":"1fr",gap:20,alignItems:"start"}}>
+        <div style={{display:"grid",gridTemplateColumns:showPanel?"260px 1fr":"1fr",gap:20,alignItems:"start"}}>
+          {/* ── Sidebar ── */}
           <div>
             <Hdr title="Clients" sub={`${clients.length} active clients`}/>
+            <button onClick={openNewClient} style={{width:"100%",padding:"11px 14px",marginBottom:12,background:"#E8621A",color:"white",borderRadius:tk.rLg,cursor:"pointer",fontSize:13,fontWeight:600,border:"none",letterSpacing:"0.01em"}}>
+              + Add new client
+            </button>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {clients.map(c=>{
                 const cm=calcMacros({...c,age:String(c.age),weight:String(c.weight),height:String(c.height)});
                 const g=GOALS.find(x=>x.id===c.goal);
+                const active=selClient?.id===c.id&&!newClientMode;
                 return (
-                  <div key={c.id} onClick={()=>setSelClient(selClient?.id===c.id?null:c)} style={{...crd,cursor:"pointer",border:selClient?.id===c.id?`2px solid ${tk.teal}`:tk.bd}}>
+                  <div key={c.id} onClick={()=>{setSelClient(selClient?.id===c.id?null:c);setNewClientMode(false);setClientStatus(null);}} style={{...crd,cursor:"pointer",border:active?`2px solid ${tk.teal}`:tk.bd}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}><span style={{fontSize:13,fontWeight:500}}>{c.name}</span><Pill text={`${g?.icon} ${g?.label}`} color={g?.color}/></div>
                     <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:3}}>{c.age}y · {c.weight}kg · {c.height}cm</div>
                     {cm&&<div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{cm.targetCal} kcal · {cm.proteinG}g P · {cm.carbG}g C · {cm.fatG}g F</div>}
                   </div>
                 );
               })}
-              <button onClick={()=>{const nc={id:Date.now(),name:"New client",age:30,weight:75,height:175,gender:"male",goal:"fat_loss",activityLevel:"moderate"};setClients(cs=>[...cs,nc]);setSelClient(nc);}} style={{padding:12,border:"0.5px dashed var(--color-border-secondary)",borderRadius:tk.rLg,cursor:"pointer",fontSize:12,color:"var(--color-text-secondary)",background:"transparent"}}>+ Add new client</button>
             </div>
           </div>
-          {selClient&&clientDraft&&(()=>{
-            const cm=calcMacros({...clientDraft,age:String(clientDraft.age),weight:String(clientDraft.weight),height:String(clientDraft.height)});
-            const inp2={width:"100%",boxSizing:"border-box",padding:"9px 12px",border:"1px solid #cccccc",borderRadius:tk.r,fontSize:13,background:"var(--color-background-primary)",color:"var(--color-text-primary)"};
-            const lbl2={fontSize:12,color:"#4A4A4A",display:"block",marginBottom:5,fontWeight:500};
+
+          {/* ── Detail panel ── */}
+          {showPanel&&clientDraft&&(()=>{
+            const cm=clientDraft.age&&clientDraft.weight&&clientDraft.height
+              ? calcMacros({...clientDraft,age:String(clientDraft.age),weight:String(clientDraft.weight),height:String(clientDraft.height)})
+              : null;
+            const saving=clientStatus?.type==='saving';
             return (
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
                 <div style={crd}>
                   {/* Header */}
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
                     <div>
-                      <h2 style={{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"var(--color-text-primary)"}}>{clientDraft.name}</h2>
-                      {cm&&<Pill text={`${cm.targetCal} kcal/day`} color={tk.tealText} bg={tk.tealSurf}/>}
+                      <h2 style={{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"var(--color-text-primary)"}}>
+                        {newClientMode?"New client":clientDraft.name}
+                      </h2>
+                      {cm&&!newClientMode&&<Pill text={`${cm.targetCal} kcal/day`} color={tk.tealText} bg={tk.tealSurf}/>}
                     </div>
                     <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                      <button onClick={()=>setTab("dashboard")} style={{fontSize:12,padding:"7px 14px",borderRadius:tk.r,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>View dashboard</button>
-                      <button onClick={saveClient} style={{fontSize:13,padding:"9px 20px",borderRadius:tk.rLg,cursor:"pointer",border:"none",background:tk.teal,color:"white",fontWeight:600}}>Save</button>
+                      {!newClientMode&&<button onClick={()=>setTab("dashboard")} style={{fontSize:12,padding:"7px 14px",borderRadius:tk.r,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>View dashboard</button>}
+                      <button onClick={()=>{setNewClientMode(false);setSelClient(null);setClientDraft(null);setClientStatus(null);}} style={{fontSize:12,padding:"7px 14px",borderRadius:tk.r,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>Cancel</button>
                     </div>
                   </div>
-                  {/* Macro stats */}
-                  {cm&&(
+
+                  {/* Macro stats — only for existing clients with complete data */}
+                  {cm&&!newClientMode&&(
                     <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:20}}>
                       {[["BMR",cm.bmr,"kcal"],["TDEE",cm.tdee,"kcal"],["Target",cm.targetCal,"kcal"],["Protein",cm.proteinG,"g"],["Fat",cm.fatG,"g"]].map(([l,v,u])=>(
                         <div key={l} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:10,textAlign:"center"}}><div style={{fontSize:15,fontWeight:600}}>{v}{u}</div><div style={{fontSize:9,color:"var(--color-text-secondary)",marginTop:2,textTransform:"uppercase",letterSpacing:"0.06em"}}>{l}</div></div>
                       ))}
                     </div>
                   )}
+
                   {/* Editable form */}
-                  <h3 style={{fontSize:13,fontWeight:600,marginBottom:14,paddingTop:16,borderTop:tk.bd}}>Client details</h3>
+                  <h3 style={{fontSize:13,fontWeight:600,marginBottom:14,paddingTop:newClientMode?0:16,borderTop:newClientMode?"none":tk.bd}}>Client details</h3>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                     <div style={{gridColumn:"1/-1"}}>
                       <label style={lbl2}>Full name</label>
-                      <input value={clientDraft.name} onChange={e=>setClientDraft(d=>({...d,name:e.target.value}))} style={inp2}/>
+                      <input value={clientDraft.name} onChange={e=>setClientDraft(d=>({...d,name:e.target.value}))} placeholder="e.g. Sarah Mitchell" style={inp2}/>
                     </div>
-                    {[{k:"age",l:"Age (yrs)"},{k:"weight",l:"Weight (kg)"},{k:"height",l:"Height (cm)"}].map(({k,l})=>(
+                    {[{k:"age",l:"Age (yrs)",ph:"32"},{k:"weight",l:"Weight (kg)",ph:"68"},{k:"height",l:"Height (cm)",ph:"165"}].map(({k,l,ph})=>(
                       <div key={k}>
                         <label style={lbl2}>{l}</label>
-                        <input type="number" min={0} value={clientDraft[k]} onChange={e=>setClientDraft(d=>({...d,[k]:+e.target.value}))} style={inp2}/>
+                        <input type="number" min={0} value={clientDraft[k]} onChange={e=>setClientDraft(d=>({...d,[k]:e.target.value}))} placeholder={ph} style={inp2}/>
                       </div>
                     ))}
                     <div>
@@ -1232,23 +1278,38 @@ export default function BurntCaloriesApp() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={saveClient} style={{width:"100%",marginTop:16,padding:"12px",borderRadius:tk.rLg,cursor:"pointer",border:"none",background:tk.teal,color:"white",fontWeight:600,fontSize:14}}>Save client</button>
+
+                  {/* Status message */}
+                  {clientStatus&&(
+                    <div style={{marginTop:12,padding:"9px 14px",borderRadius:tk.r,fontSize:13,fontWeight:500,
+                      background:clientStatus.type==='ok'?"#EAF3E6":clientStatus.type==='err'?"#FEF0F0":"var(--color-background-secondary)",
+                      color:clientStatus.type==='ok'?"#243D1F":clientStatus.type==='err'?"#991111":"var(--color-text-secondary)"}}>
+                      {clientStatus.msg}
+                    </div>
+                  )}
+
+                  <button onClick={saveClient} disabled={saving} style={{width:"100%",marginTop:14,padding:"13px",borderRadius:tk.rLg,cursor:saving?"default":"pointer",border:"none",background:saving?"#ccc":tk.teal,color:"white",fontWeight:600,fontSize:14,transition:"background 0.15s"}}>
+                    {saving?"Saving…":newClientMode?"Save new client":"Save changes"}
+                  </button>
                 </div>
-                {/* Recommended recipes */}
-                <div style={crd}>
-                  <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Recommended recipes for {clientDraft.name}</h3>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
-                    {recipes.filter(r=>parseArr(r.goal).includes(clientDraft.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
+
+                {/* Recommended recipes — only for existing clients */}
+                {!newClientMode&&(
+                  <div style={crd}>
+                    <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Recommended recipes for {clientDraft.name}</h3>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
+                      {recipes.filter(r=>parseArr(r.goal).includes(clientDraft.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
+                    </div>
+                    {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)}/>}
                   </div>
-                  {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)}/>}
-                </div>
+                )}
               </div>
             );
           })()}
         </div>
       )}
     </div>
-  );
+  );}
 
   // ── WORKOUTS ─────────────────────────────────────────────────────────────────
   if(tab==="workouts") return (
