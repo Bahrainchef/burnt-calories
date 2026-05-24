@@ -21,26 +21,20 @@ export default function Home() {
 
       <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-2xl">
         {/* Logo */}
-        <div className="mb-8">
-          <img src="/logo.png" alt="Burnt Calories" style={{ maxWidth: 220, display: "block" }} />
+        <div className="mb-10 flex justify-center">
+          <img
+            src="/logo.png"
+            alt="Burnt Calories"
+            style={{ maxWidth: 280, display: "block", mixBlendMode: "multiply" }}
+          />
         </div>
 
-        {/* Wordmark */}
-        <h1 className="text-5xl font-bold tracking-tight mb-3" style={{ color: "#f5f0e8" }}>
-          <span style={{ color: "#E8621A" }}>Burnt</span> Calories
-        </h1>
-
-        <p
-          className="text-sm font-medium tracking-[0.18em] uppercase mb-8"
-          style={{ color: "#8a7a5a" }}
-        >
-          Nutrition &amp; Performance
-        </p>
-
         <p className="text-lg leading-relaxed mb-12" style={{ color: "#c8b896" }}>
-          Personalised macros. 154 ingredients. 55 performance recipes.
+          Science-backed nutrition for a longer, stronger life.
           <br />
-          Built for serious performance.
+          154 whole-food ingredients. 55 chef-crafted recipes.
+          <br />
+          Built around the flavours of the Gulf.
         </p>
 
         {/* Feature pills */}

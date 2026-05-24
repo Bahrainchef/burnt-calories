@@ -346,7 +346,7 @@ function RecipeCard({recipe,onSelect,selected}) {
           <span style={{fontSize:10,color:"var(--color-text-tertiary)",padding:"2px 8px",background:"var(--color-background-secondary)",borderRadius:20,marginLeft:"auto"}}>{recipe.cat}</span>
         </div>
         <div style={{fontSize:13,fontWeight:500,lineHeight:1.3,marginBottom:4}}>{recipe.name}</div>
-        <div style={{fontSize:11,color:"var(--color-text-secondary)",lineHeight:1.5,marginBottom:10}}>{recipe.desc.slice(0,72)}…</div>
+        <div style={{fontSize:11,color:"var(--color-text-secondary)",lineHeight:1.5,marginBottom:10}}>{(recipe.desc||recipe.description||'').slice(0,72)}…</div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{parseArr(recipe.tags).slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",paddingTop:10,borderTop:tk.bd}}>
           {[["kcal",m.cal,tk.teal],["P",m.p+"g",tk.blue],["C",m.c+"g",tk.green],["F",m.f+"g",tk.coral]].map(([l,v,c])=>(
@@ -721,7 +721,14 @@ function safeParse(val, fallback=[]) {
   return fallback;
 }
 function normalizeRecipe(r) {
-  return {...r, ings:parseArr(r.ings), tags:parseArr(r.tags), method:parseArr(r.method), goal:parseArr(r.goal)};
+  return {
+    ...r,
+    desc: r.desc ?? r.description ?? '',
+    ings:  parseArr(r.ings),
+    tags:  parseArr(r.tags),
+    method:parseArr(r.method),
+    goal:  parseArr(r.goal),
+  };
 }
 
 // ─── Main app ───────────────────────────────────────────────────────────────────
@@ -833,13 +840,7 @@ export default function BurntCaloriesApp() {
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",height:52}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/logo.png" alt="Burnt Calories" style={{height:32,display:"block"}}/>
-            <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-              <span style={{fontSize:14,fontWeight:600,letterSpacing:"-0.02em",color:"var(--color-text-primary)"}}>
-                <span style={{color:"#E8621A"}}>Burnt</span> Calories
-              </span>
-              <span style={{fontSize:10,color:"var(--color-text-tertiary)",letterSpacing:"0.1em",textTransform:"uppercase"}}>Nutrition & Performance</span>
-            </div>
+            <img src="/logo.png" alt="Burnt Calories" style={{height:36,display:"block",mixBlendMode:"multiply"}}/>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:12,color:"var(--color-text-secondary)"}}>Hi, {profile.name}</span>
@@ -1021,11 +1022,15 @@ export default function BurntCaloriesApp() {
               {GOALS.map(g=><option key={g.id} value={g.id}>{g.icon} {g.label}</option>)}
             </select>
           </div>
-          <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:14}}>{filteredRecipes.length} recipes</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
-            {filteredRecipes.map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
-          </div>
           {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null}/>}
+          <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:14,marginTop:selRecipe?16:0}}>{filteredRecipes.length} recipes</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
+            {filteredRecipes.map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>{
+              const next=selRecipe?.id===r.id?null:r;
+              setSelRecipe(next);
+              if(next) window.scrollTo({top:0,behavior:'smooth'});
+            }}/>)}
+          </div>
         </>}
       </>)}
     </div>
