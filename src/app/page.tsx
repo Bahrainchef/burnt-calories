@@ -10,7 +10,7 @@ export default function Home() {
         backgroundPosition: "center 40%",
       }}
     >
-      {/* Dark gradient overlay: heavy top → clear middle (wheat) → heavy bottom */}
+      {/* Dark gradient overlay */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -29,55 +29,97 @@ export default function Home() {
           />
         </div>
 
-        <p className="text-lg leading-relaxed mb-12" style={{ color: "#c8b896" }}>
-          Science-backed nutrition for a longer, stronger life.
+        {/* Headline */}
+        <h1
+          className="mb-5 leading-tight"
+          style={{
+            fontSize: "clamp(2rem, 5vw, 2.75rem)",
+            fontWeight: 300,
+            fontStyle: "italic",
+            color: "#f5f0e8",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Food as medicine.<br />
+          Performance as purpose.
+        </h1>
+
+        {/* Subheading */}
+        <p
+          className="leading-relaxed mb-10"
+          style={{ fontSize: "clamp(0.9rem, 2vw, 1.05rem)", color: "#b8a882", fontWeight: 300 }}
+        >
+          Where culinary craft meets longevity science.
           <br />
-          154 whole-food ingredients. 55 chef-crafted recipes.
+          Nutrition built around the rich flavours of the Gulf —
           <br />
-          Built around the flavours of the Gulf.
+          <span style={{ color: "#d4b87a" }}>za&apos;atar, saffron, freekeh, pomegranate</span> —
+          <br />
+          designed to fuel a longer, stronger, more vibrant life.
         </p>
 
-        {/* Feature pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12">
+        {/* Three pillars */}
+        <div className="flex flex-col gap-5 mb-12 text-left w-full max-w-lg">
           {[
-            "Macro calculator",
-            "Recipe library",
-            "Meal builder",
-            "Ingredient database",
-            "Client management",
-            "Workout protocols",
-          ].map((f) => (
-            <span
-              key={f}
-              className="text-xs px-3 py-1 rounded-full"
-              style={{
-                background: "rgba(232,98,26,0.12)",
-                color: "#E8621A",
-                border: "1px solid rgba(232,98,26,0.22)",
-              }}
-            >
-              {f}
-            </span>
+            {
+              icon: "🌿",
+              title: "Eat for longevity",
+              body: "Anti-inflammatory whole foods that protect, repair and energise at a cellular level.",
+            },
+            {
+              icon: "🔥",
+              title: "Perform at your peak",
+              body: "Precision macros and protein timing built around your training and your goals.",
+            },
+            {
+              icon: "✨",
+              title: "Live with intention",
+              body: "Food that tastes extraordinary, looks beautiful and makes you feel unstoppable.",
+            },
+          ].map(({ icon, title, body }) => (
+            <div key={title} className="flex gap-4 items-start">
+              <span style={{ fontSize: 22, lineHeight: 1, marginTop: 2 }}>{icon}</span>
+              <p style={{ fontSize: "0.9rem", color: "#c8b896", lineHeight: 1.6, margin: 0 }}>
+                <span style={{ color: "#f0e8d8", fontWeight: 500 }}>{title}</span>
+                {" — "}
+                {body}
+              </p>
+            </div>
           ))}
         </div>
 
-        {/* CTA */}
-        <Link
-          href="/app"
-          className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-semibold transition-all duration-200 hover:scale-105 hover:brightness-110"
-          style={{
-            background: "#E8621A",
-            color: "#fff",
-            boxShadow: "0 0 32px rgba(232,98,26,0.45)",
-          }}
-        >
-          Open platform
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
+        {/* CTAs */}
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
+          <Link
+            href="/app"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-semibold transition-all duration-200 hover:scale-105 hover:brightness-110"
+            style={{
+              background: "#E8621A",
+              color: "#fff",
+              boxShadow: "0 0 32px rgba(232,98,26,0.45)",
+            }}
+          >
+            Build my plan
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
 
-        <p className="mt-6 text-xs" style={{ color: "#5a4f3a" }}>
+          <Link
+            href="/app"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-medium transition-all duration-200 hover:scale-105"
+            style={{
+              background: "rgba(245,240,232,0.08)",
+              color: "#f0e8d8",
+              border: "1px solid rgba(245,240,232,0.18)",
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            Explore recipes
+          </Link>
+        </div>
+
+        <p className="text-xs" style={{ color: "#5a4f3a" }}>
           burntcalories.com
         </p>
       </div>
