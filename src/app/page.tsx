@@ -23,9 +23,9 @@ export default function Home() {
         {/* Logo */}
         <div className="mb-10 flex justify-center">
           <img
-            src="/logo.png"
+            src="/logo-transparent.png"
             alt="Burnt Calories"
-            style={{ maxWidth: 280, display: "block", mixBlendMode: "multiply" }}
+            style={{ maxWidth: 320, width: "100%", display: "block", filter: "contrast(1.1) brightness(1.05)" }}
           />
         </div>
 

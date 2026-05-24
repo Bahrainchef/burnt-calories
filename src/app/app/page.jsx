@@ -428,6 +428,11 @@ function RecipeDetail({recipe,onClose,onDelete}) {
   }
   return (
     <div style={{marginTop:16,...crd,borderRadius:tk.rXl,padding:0,overflow:"hidden"}}>
+      <div style={{padding:"12px 20px 0",borderBottom:"none"}}>
+        <button onClick={onClose} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:13,fontWeight:500,color:"#E8621A",background:"transparent",border:"none",cursor:"pointer",padding:0,marginBottom:4}}>
+          ← Back to recipes
+        </button>
+      </div>
       {hasPhoto && <img src={recipe.photo_url} alt={recipe.name} style={{width:"100%",height:240,objectFit:"cover",display:"block"}}/>}
       <div style={{padding:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
@@ -439,7 +444,6 @@ function RecipeDetail({recipe,onClose,onDelete}) {
           <div style={{display:"flex",gap:8}}>
             <button onClick={handlePrint} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,background:tk.tealSurf,color:tk.tealText,border:`1px solid rgba(232,98,26,0.22)`}}>🖨 Print</button>
             {onDelete&&<button onClick={()=>onDelete(recipe.id)} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,color:tk.red}}>Delete</button>}
-            <button onClick={onClose} style={{padding:"6px 14px",borderRadius:tk.r,cursor:"pointer",fontSize:12}}>Close ✕</button>
           </div>
         </div>
         <p style={{fontSize:13,color:"var(--color-text-secondary)",lineHeight:1.6,marginBottom:16}}>{recipe.desc}</p>
@@ -840,7 +844,7 @@ export default function BurntCaloriesApp() {
       <div style={{maxWidth:1200,margin:"0 auto",padding:"0 20px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",height:52}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/logo.png" alt="Burnt Calories" style={{height:36,display:"block",mixBlendMode:"multiply"}}/>
+            <img src="/logo-transparent.png" alt="Burnt Calories" style={{height:38,display:"block",filter:"contrast(1.1) brightness(1.05)"}}/>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:12,color:"var(--color-text-secondary)"}}>Hi, {profile.name}</span>
