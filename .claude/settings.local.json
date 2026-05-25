@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx create-next-app@14 *)"
+      "Bash(npx create-next-app@14 *)",
+      "Bash(npx vercel *)",
+      "Bash(npm run *)",
+      "Bash(git commit *)",
+      "Read(//Users/paulbritton/Downloads/**)",
+      "Bash(cp ~/Downloads/Burnt_Calories_Crop_Logo.png /Users/paulbritton/projects/burnt-calories/public/logo.png)"
     ]
   }
 }

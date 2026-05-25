@@ -360,7 +360,7 @@ function RecipeCard({recipe,onSelect,selected}) {
 }
 
 // ─── Recipe detail ──────────────────────────────────────────────────────────────
-function RecipeDetail({recipe,onClose,onDelete}) {
+function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
   if(!recipe) return null;
   const ings   = parseArr(recipe.ings);
   const tags   = parseArr(recipe.tags);
@@ -369,7 +369,37 @@ function RecipeDetail({recipe,onClose,onDelete}) {
   const safeRecipe = {...recipe, ings, tags, method, goal};
   const m=recipeTotals(safeRecipe);
   const resolved=ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
-  const hasPhoto=!!recipe.photo_url;
+
+  const [localPhoto,setLocalPhoto]       = useState(recipe.photo_url||null);
+  const [photoUploading,setPhotoUploading] = useState(false);
+  const [photoErr,setPhotoErr]           = useState(null);
+  const [photoDragOver,setPhotoDragOver] = useState(false);
+  const photoInputRef = useRef(null);
+  const hasPhoto = !!localPhoto;
+
+  async function handlePhotoFile(file) {
+    if(!file) return;
+    const allowed=['image/jpeg','image/png','image/webp'];
+    if(!allowed.includes(file.type)){setPhotoErr('Only JPG, PNG or WebP accepted.');return;}
+    if(file.size>5*1024*1024){setPhotoErr('File must be under 5 MB.');return;}
+    setPhotoErr(null);
+    setPhotoUploading(true);
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const path = `recipe-${recipe.id}-${Date.now()}.${ext}`;
+      const {error:upErr} = await supabase.storage.from('recipe-images').upload(path,file,{upsert:true,contentType:file.type});
+      if(upErr) throw upErr;
+      const {data:{publicUrl}} = supabase.storage.from('recipe-images').getPublicUrl(path);
+      const {error:dbErr} = await supabase.from('recipes').update({photo_url:publicUrl}).eq('id',recipe.id);
+      if(dbErr) throw dbErr;
+      setLocalPhoto(publicUrl);
+      if(onUpdate) onUpdate({...recipe,photo_url:publicUrl});
+    } catch(e) {
+      setPhotoErr('Upload failed: '+(e.message||'unknown error'));
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
 
   function handlePrint() {
     const benefitsHtml = resolved.map(ing=>
@@ -406,7 +436,7 @@ function RecipeDetail({recipe,onClose,onDelete}) {
         @media print{body{padding:16px}button{display:none}}
       </style>
     </head><body>
-      ${hasPhoto?`<img src="${recipe.photo_url}" style="width:100%;height:200px;object-fit:cover;border-radius:10px;margin-bottom:20px;display:block"/>`:
+      ${localPhoto?`<img src="${localPhoto}" style="width:100%;height:200px;object-fit:cover;border-radius:10px;margin-bottom:20px;display:block"/>`:
         `<div style="font-size:48px;text-align:center;margin-bottom:12px">${recipe.emoji}</div>`}
       <h1>${recipe.name}</h1>
       <div class="meta">${recipe.cat} · ${recipe.prep} min prep · ${recipe.cook} min cook · serves ${recipe.serves}${tags.length?` · ${tags.join(', ')}`:''}
@@ -434,7 +464,35 @@ function RecipeDetail({recipe,onClose,onDelete}) {
           ← Back to recipes
         </button>
       </div>
-      {hasPhoto && <img src={recipe.photo_url} alt={recipe.name} style={{width:"100%",height:240,objectFit:"cover",display:"block"}}/>}
+      {/* Photo zone */}
+      {hasPhoto ? (
+        <div style={{position:"relative",width:"100%",height:240,cursor:"pointer"}} onClick={()=>photoInputRef.current?.click()}
+          onMouseEnter={e=>e.currentTarget.querySelector('.photo-overlay').style.opacity=1}
+          onMouseLeave={e=>e.currentTarget.querySelector('.photo-overlay').style.opacity=0}>
+          <img src={localPhoto} alt={recipe.name} style={{width:"100%",height:240,objectFit:"cover",display:"block"}}/>
+          <div className="photo-overlay" style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",opacity:0,transition:"opacity 0.2s"}}>
+            <span style={{color:"#fff",fontSize:13,fontWeight:500,background:"rgba(0,0,0,0.5)",padding:"8px 16px",borderRadius:20}}>
+              {photoUploading?"Uploading…":"📷 Change photo"}
+            </span>
+          </div>
+          <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" style={{display:"none"}} onChange={e=>handlePhotoFile(e.target.files?.[0])}/>
+        </div>
+      ) : (
+        <div
+          onClick={()=>!photoUploading&&photoInputRef.current?.click()}
+          onDragOver={e=>{e.preventDefault();setPhotoDragOver(true);}}
+          onDragLeave={()=>setPhotoDragOver(false)}
+          onDrop={e=>{e.preventDefault();setPhotoDragOver(false);handlePhotoFile(e.dataTransfer.files?.[0]);}}
+          style={{margin:"0 20px",borderRadius:tk.r,border:`2px dashed ${photoDragOver?"#E8621A":"#cccccc"}`,background:photoDragOver?"#FDEEE6":"var(--color-background-secondary)",padding:"28px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:photoUploading?"default":"pointer",transition:"all 0.15s",marginBottom:4}}>
+          {photoUploading ? (
+            <><span style={{fontSize:22}}>⏳</span><span style={{fontSize:12,color:"var(--color-text-secondary)"}}>Uploading…</span></>
+          ) : (
+            <><span style={{fontSize:22}}>📷</span><span style={{fontSize:12,fontWeight:500,color:"var(--color-text-primary)"}}>Add recipe photo</span><span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>Click or drag and drop · JPG, PNG, WebP · max 5 MB</span></>
+          )}
+          <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" style={{display:"none"}} onChange={e=>handlePhotoFile(e.target.files?.[0])}/>
+        </div>
+      )}
+      {photoErr&&<div style={{margin:"6px 20px 0",fontSize:12,color:"#c00"}}>{photoErr}</div>}
       <div style={{padding:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
           <div>
@@ -798,6 +856,10 @@ export default function BurntCaloriesApp() {
     if(selRecipe?.id===id) setSelRecipe(null);
     try { await supabase.from('recipes').delete().eq('id',id); } catch(e){}
   }
+  function updateRecipe(updated) {
+    setRecipes(prev=>prev.map(r=>r.id===updated.id?normalizeRecipe(updated):r));
+    if(selRecipe?.id===updated.id) setSelRecipe(normalizeRecipe(updated));
+  }
   async function saveClient() {
     if(!clientDraft) return;
     if(!clientDraft.name?.trim()||!clientDraft.age||!clientDraft.weight||!clientDraft.height) {
@@ -809,7 +871,7 @@ export default function BurntCaloriesApp() {
       const payload={
         name:clientDraft.name.trim(), age:+clientDraft.age, weight:+clientDraft.weight,
         height:+clientDraft.height, gender:clientDraft.gender, goal:clientDraft.goal,
-        activity_level:clientDraft.activityLevel,
+        activity_level:clientDraft.activityLevel, notes:clientDraft.notes||null,
       };
       const {data,error}=await supabase.from('clients').insert(payload).select().single();
       if(error){setClientStatus({type:'err',msg:'Save failed: '+error.message});return;}
@@ -825,12 +887,20 @@ export default function BurntCaloriesApp() {
       const {error}=await supabase.from('clients').upsert({
         id:updated.id, name:updated.name, age:updated.age, weight:updated.weight,
         height:updated.height, gender:updated.gender, goal:updated.goal,
-        activity_level:updated.activityLevel,
+        activity_level:updated.activityLevel, notes:updated.notes||null,
       },{onConflict:'id'});
       if(error) setClientStatus({type:'err',msg:'Save failed: '+error.message});
       else setClientStatus({type:'ok',msg:'Changes saved ✓'});
     }
     setTimeout(()=>setClientStatus(null),3000);
+  }
+  async function deleteClient(id) {
+    if(!window.confirm("Delete this client? This cannot be undone.")) return;
+    setClients(prev=>prev.filter(c=>c.id!==id));
+    setSelClient(null);
+    setClientDraft(null);
+    setNewClientMode(false);
+    try { await supabase.from('clients').delete().eq('id',id); } catch(e){}
   }
 
   const filteredRecipes = useMemo(()=>recipes.filter(r=>{
@@ -907,8 +977,8 @@ export default function BurntCaloriesApp() {
       {Nav}{wrap(<>
         {viewingClient&&(
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:tk.tealSurf,border:`1px solid ${tk.teal}30`,borderRadius:tk.rLg,padding:"10px 16px",marginBottom:16}}>
-            <span style={{fontSize:13,fontWeight:500,color:tk.tealText}}>👁 Viewing: {viewingClient.name}</span>
-            <button onClick={()=>setSelClient(null)} style={{fontSize:12,color:tk.tealText,cursor:"pointer",border:"none",background:"transparent",fontWeight:500}}>← Back to my dashboard</button>
+            <span style={{fontSize:13,fontWeight:500,color:tk.tealText}}>👁 Viewing plan for: {viewingClient.name}</span>
+            <button onClick={()=>setSelClient(null)} style={{fontSize:12,color:tk.tealText,cursor:"pointer",border:"none",background:"transparent",fontWeight:500}}>← Back to my plan</button>
           </div>
         )}
         <Hdr title={viewingClient?"Client dashboard":"Your dashboard"} sub={`${ingredients.length} ingredients · ${recipes.length} recipes · personalised for ${dashSubject.name} · Burnt Calories`}/>
@@ -1056,7 +1126,7 @@ export default function BurntCaloriesApp() {
               {GOALS.map(g=><option key={g.id} value={g.id}>{g.icon} {g.label}</option>)}
             </select>
           </div>
-          {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null}/>}
+          {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null} onUpdate={updateRecipe}/>}
           <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:14,marginTop:selRecipe?16:0}}>{filteredRecipes.length} recipes</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
             {filteredRecipes.map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>{
@@ -1181,7 +1251,7 @@ export default function BurntCaloriesApp() {
     const openNewClient=()=>{
       setNewClientMode(true);
       setSelClient(null);
-      setClientDraft({id:null,name:"",age:"",weight:"",height:"",gender:"male",goal:"fat_loss",activityLevel:"moderate"});
+      setClientDraft({id:null,name:"",age:"",weight:"",height:"",gender:"male",goal:"fat_loss",activityLevel:"moderate",notes:""});
       setClientStatus(null);
     };
     return (
@@ -1282,6 +1352,10 @@ export default function BurntCaloriesApp() {
                         ))}
                       </div>
                     </div>
+                    <div style={{gridColumn:"1/-1"}}>
+                      <label style={lbl2}>Notes</label>
+                      <textarea value={clientDraft.notes||""} onChange={e=>setClientDraft(d=>({...d,notes:e.target.value}))} placeholder="Training notes, dietary restrictions, preferences…" rows={3} style={{...inp2,resize:"vertical",fontFamily:"inherit",lineHeight:1.5}}/>
+                    </div>
                   </div>
 
                   {/* Status message */}
@@ -1296,6 +1370,11 @@ export default function BurntCaloriesApp() {
                   <button onClick={saveClient} disabled={saving} style={{width:"100%",marginTop:14,padding:"13px",borderRadius:tk.rLg,cursor:saving?"default":"pointer",border:"none",background:saving?"#ccc":tk.coral,color:"white",fontWeight:600,fontSize:14,transition:"background 0.15s"}}>
                     {saving?"Saving…":newClientMode?"Save new client":"Save changes"}
                   </button>
+                  {!newClientMode&&clientDraft.id&&(
+                    <button onClick={()=>deleteClient(clientDraft.id)} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:tk.rLg,cursor:"pointer",border:"1px solid #E24B4A",background:"transparent",color:"#E24B4A",fontWeight:500,fontSize:13}}>
+                      Delete client
+                    </button>
+                  )}
                 </div>
 
                 {/* Recommended recipes — only for existing clients */}
@@ -1305,7 +1384,7 @@ export default function BurntCaloriesApp() {
                     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
                       {recipes.filter(r=>parseArr(r.goal).includes(clientDraft.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
                     </div>
-                    {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)}/>}
+                    {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)} onUpdate={updateRecipe}/>}
                   </div>
                 )}
               </div>
