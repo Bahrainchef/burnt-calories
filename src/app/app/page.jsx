@@ -887,9 +887,16 @@ export default function BurntCaloriesApp() {
   const [profileId,setProfileId] = useState(null);
   const [planClientId,setPlanClientId] = useState(null);
   const [currentPlan,setCurrentPlan] = useState(null);
-  const [planView,setPlanView] = useState('plan'); // 'plan' | 'shopping'
+  const [planView,setPlanView] = useState('plan');
+  const [isMobile,setIsMobile] = useState(()=>typeof window!=='undefined'?window.innerWidth<768:false);
+  const [navOpen,setNavOpen] = useState(false);
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
+  useEffect(()=>{
+    const check=()=>setIsMobile(window.innerWidth<768);
+    window.addEventListener('resize',check);
+    return()=>window.removeEventListener('resize',check);
+  },[]);
   useEffect(()=>{
     if(!newClientMode) setClientDraft(selClient ? {...selClient} : null);
   },[selClient?.id]);
@@ -1029,35 +1036,69 @@ export default function BurntCaloriesApp() {
     {id:"workouts",    label:"Workouts",    icon:"🏋️"},
   ];
 
+  const activeTab=TABS.find(t=>t.id===tab);
   const Nav = (
     <div style={{position:"sticky",top:0,zIndex:100}}>
       {/* Top tier — white, logo + user info */}
       <div style={{background:"#ffffff",borderBottom:"1px solid #e8e8e8"}}>
-        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64}}>
-          <img src="/logo.png" alt="Burnt Calories" style={{height:48,display:"block"}}/>
+        <div style={{maxWidth:1200,margin:"0 auto",padding:`0 ${isMobile?16:24}px`,display:"flex",alignItems:"center",justifyContent:"space-between",height:isMobile?52:64}}>
+          <img src="/logo.png" alt="Burnt Calories" style={{height:isMobile?34:48,display:"block"}}/>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:13,color:"#4A4A4A",fontWeight:500}}>Hi, {profile.name}</span>
-            {macros&&<Pill text={macros.targetCal+" kcal"} color={tk.tealText} bg={tk.tealSurf}/>}
+            <span style={{fontSize:12,color:"#4A4A4A",fontWeight:500}}>Hi, {profile.name}</span>
+            {macros&&!isMobile&&<Pill text={macros.targetCal+" kcal"} color={tk.tealText} bg={tk.tealSurf}/>}
           </div>
         </div>
       </div>
-      {/* Bottom tier — forest green, navigation tabs */}
-      <div style={{background:"#2D5A27"}}>
-        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 8px",display:"flex",justifyContent:"space-evenly",alignItems:"stretch",height:44}}>
-          {TABS.map(tb=>(
-            <button key={tb.id} onClick={()=>{setTab(tb.id);setSelRecipe(null);setShowUploader(false);}}
-              style={{flex:1,padding:"0 18px",fontSize:13,whiteSpace:"nowrap",borderRadius:0,background:tab===tb.id?"rgba(255,255,255,0.10)":"transparent",color:"#ffffff",fontWeight:500,letterSpacing:"0.04em",borderBottom:tab===tb.id?"2px solid #E8621A":"2px solid transparent",cursor:"pointer",transition:"background 0.15s",minHeight:44}}
-              onMouseEnter={e=>{ if(tab!==tb.id) e.currentTarget.style.background="rgba(255,255,255,0.15)"; }}
-              onMouseLeave={e=>{ if(tab!==tb.id) e.currentTarget.style.background="transparent"; }}>
-              {tb.icon} {tb.label}
-            </button>
-          ))}
-        </div>
+
+      {/* Bottom tier — desktop: full tab bar | mobile: current tab + hamburger */}
+      <div style={{background:"#2D5A27",position:"relative"}}>
+        {isMobile ? (
+          <>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",height:44}}>
+              <span style={{color:"#fff",fontSize:14,fontWeight:500}}>
+                {activeTab?.icon} {activeTab?.label}
+              </span>
+              <button onClick={()=>setNavOpen(v=>!v)}
+                style={{color:"#fff",background:"transparent",border:"none",cursor:"pointer",padding:"4px 8px",fontSize:22,lineHeight:1,display:"flex",alignItems:"center"}}>
+                {navOpen?"✕":"≡"}
+              </button>
+            </div>
+            {navOpen&&(
+              <>
+                {/* Backdrop */}
+                <div onClick={()=>setNavOpen(false)} style={{position:"fixed",inset:0,zIndex:99,background:"transparent"}}/>
+                {/* Dropdown */}
+                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#2D5A27",zIndex:100,boxShadow:"0 8px 24px rgba(0,0,0,0.30)"}}>
+                  {TABS.map(tb=>(
+                    <button key={tb.id}
+                      onClick={()=>{setTab(tb.id);setSelRecipe(null);setShowUploader(false);setNavOpen(false);}}
+                      style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"13px 20px",background:tab===tb.id?"rgba(255,255,255,0.12)":"transparent",color:"#fff",border:"none",borderTop:"1px solid rgba(255,255,255,0.08)",cursor:"pointer",fontSize:15,fontWeight:tab===tb.id?600:400,textAlign:"left"}}>
+                      <span style={{fontSize:19,width:26,flexShrink:0}}>{tb.icon}</span>
+                      {tb.label}
+                      {tab===tb.id&&<span style={{marginLeft:"auto",color:"#E8621A",fontSize:18}}>●</span>}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div style={{maxWidth:1200,margin:"0 auto",padding:"0 8px",display:"flex",justifyContent:"space-evenly",alignItems:"stretch",height:44}}>
+            {TABS.map(tb=>(
+              <button key={tb.id} onClick={()=>{setTab(tb.id);setSelRecipe(null);setShowUploader(false);}}
+                style={{flex:1,padding:"0 10px",fontSize:12,whiteSpace:"nowrap",borderRadius:0,background:tab===tb.id?"rgba(255,255,255,0.10)":"transparent",color:"#ffffff",fontWeight:500,letterSpacing:"0.03em",borderBottom:tab===tb.id?"2px solid #E8621A":"2px solid transparent",cursor:"pointer",transition:"background 0.15s",minHeight:44}}
+                onMouseEnter={e=>{ if(tab!==tb.id) e.currentTarget.style.background="rgba(255,255,255,0.15)"; }}
+                onMouseLeave={e=>{ if(tab!==tb.id) e.currentTarget.style.background="transparent"; }}>
+                {tb.icon} {tb.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 
-  const wrap=ch=><div style={{maxWidth:1200,margin:"0 auto",padding:"28px 20px"}}>{ch}</div>;
+  const wrap=ch=><div style={{maxWidth:1200,margin:"0 auto",padding:isMobile?"16px 12px":"28px 20px"}}>{ch}</div>;
 
   // ── DASHBOARD ────────────────────────────────────────────────────────────────
   if(tab==="dashboard") {
