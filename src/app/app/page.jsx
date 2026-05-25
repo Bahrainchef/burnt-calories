@@ -824,7 +824,10 @@ export default function BurntCaloriesApp() {
   const [selClient,setSelClient] = useState(null);
   const [clientDraft,setClientDraft] = useState(null);
   const [newClientMode,setNewClientMode] = useState(false);
-  const [clientStatus,setClientStatus] = useState(null); // null | {type:'ok'|'err'|'saving', msg:string}
+  const [clientStatus,setClientStatus] = useState(null);
+  const [calcDraft,setCalcDraft] = useState({...{name:"Paul",gender:"male",age:"40",weight:"90",height:"180",goal:"fat_loss",activityLevel:"very"}});
+  const [calcStatus,setCalcStatus] = useState(null); // null | 'saving' | 'ok' | 'err'
+  const [profileId,setProfileId] = useState(null);
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
   useEffect(()=>{
@@ -834,14 +837,22 @@ export default function BurntCaloriesApp() {
   useEffect(()=>{
     async function loadDb() {
       try {
-        const [{data:ings,error:ie},{data:recs,error:re},{data:cls,error:ce}] = await Promise.all([
+        const [{data:ings,error:ie},{data:recs,error:re},{data:cls,error:ce},{data:profs,error:pe}] = await Promise.all([
           supabase.from('ingredients').select('*').order('id'),
           supabase.from('recipes').select('*').order('id'),
           supabase.from('clients').select('*').order('id'),
+          supabase.from('profiles').select('*').order('created_at',{ascending:false}).limit(1),
         ]);
         if(!ie && ings?.length) setIngredients(ings);
         if(!re && recs?.length) setRecipes(recs.map(normalizeRecipe));
         if(!ce && cls?.length) setClients(cls.map(c=>({...c,activityLevel:c.activity_level})));
+        if(!pe && profs?.length) {
+          const p=profs[0];
+          const loaded={name:p.name||"",gender:p.gender||"male",age:String(p.age||""),weight:String(p.weight||""),height:String(p.height||""),goal:p.goal||"fat_loss",activityLevel:p.activity_level||"moderate"};
+          setProfile(loaded);
+          setCalcDraft(loaded);
+          setProfileId(p.id);
+        }
       } catch(e){}
     }
     loadDb();
@@ -855,6 +866,26 @@ export default function BurntCaloriesApp() {
     setRecipes(prev=>prev.filter(r=>r.id!==id));
     if(selRecipe?.id===id) setSelRecipe(null);
     try { await supabase.from('recipes').delete().eq('id',id); } catch(e){}
+  }
+  async function saveProfile() {
+    setCalcStatus('saving');
+    const payload={name:calcDraft.name,age:+calcDraft.age||null,weight:+calcDraft.weight||null,height:+calcDraft.height||null,gender:calcDraft.gender,goal:calcDraft.goal,activity_level:calcDraft.activityLevel};
+    try {
+      if(profileId) {
+        const {error}=await supabase.from('profiles').update(payload).eq('id',profileId);
+        if(error) throw error;
+      } else {
+        const {data,error}=await supabase.from('profiles').insert(payload).select().single();
+        if(error) throw error;
+        setProfileId(data.id);
+      }
+      setProfile({...calcDraft});
+      setCalcStatus('ok');
+      setTimeout(()=>setCalcStatus(null),2000);
+    } catch(e) {
+      setCalcStatus('err');
+      setTimeout(()=>setCalcStatus(null),3000);
+    }
   }
   function updateRecipe(updated) {
     setRecipes(prev=>prev.map(r=>r.id===updated.id?normalizeRecipe(updated):r));
@@ -924,6 +955,8 @@ export default function BurntCaloriesApp() {
     builderIngs.forEach(bi=>{const m=ingMacros(bi);cal+=m.cal;p+=m.p;c+=m.c;f+=m.f;fi+=m.fi;});
     return {cal:Math.round(cal),p:Math.round(p),c:Math.round(c),f:Math.round(f),fi:Math.round(fi)};
   },[builderIngs]);
+
+  const liveCalcMacros = useMemo(()=>calcMacros(calcDraft),[calcDraft]);
 
   const TABS=[
     {id:"dashboard",   label:"Dashboard",   icon:"📊"},
@@ -1033,76 +1066,107 @@ export default function BurntCaloriesApp() {
   );};
 
   // ── CALCULATOR ───────────────────────────────────────────────────────────────
-  if(tab==="calculator") return (
+  if(tab==="calculator") {
+    const inp3={width:"100%",boxSizing:"border-box",padding:"10px 14px",border:"1px solid #C0DD97",borderRadius:tk.r,fontSize:13,background:"#fff",color:"#1a1a1a",outline:"none"};
+    const lbl3={fontSize:13,color:"#4A4A4A",display:"block",marginBottom:6,fontWeight:500};
+    const secHdr={fontSize:14,fontWeight:600,color:"#2D5A27",margin:"0 0 16px"};
+    const saving3=calcStatus==='saving';
+    return (
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(
         <div style={{maxWidth:640}}>
           <Hdr title="Macro calculator" sub="Harris-Benedict BMR · activity-adjusted TDEE · your personalised Burnt Calories targets"/>
+
+          {/* Personal details */}
           <div style={{...crd,marginBottom:16}}>
-            <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 16px"}}>Personal details</h2>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-              {[{k:"name",l:"Full name",type:"text",ph:"Your name"},{k:"age",l:"Age",type:"number",ph:"35"},{k:"weight",l:"Weight (kg)",type:"number",ph:"80"},{k:"height",l:"Height (cm)",type:"number",ph:"178"}].map(f=>(
-                <div key={f.k}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>{f.l}</label><input type={f.type} value={profile[f.k]||""} onChange={e=>setProfile(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} style={{width:"100%",boxSizing:"border-box"}}/></div>
+            <h2 style={secHdr}>Personal details</h2>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+              {[{k:"name",l:"Full name",type:"text",ph:"Your name",col:"1/-1"},{k:"age",l:"Age (yrs)",type:"number",ph:"35"},{k:"weight",l:"Weight (kg)",type:"number",ph:"80"},{k:"height",l:"Height (cm)",type:"number",ph:"178"}].map(f=>(
+                <div key={f.k} style={f.col?{gridColumn:f.col}:{}}>
+                  <label style={lbl3}>{f.l}</label>
+                  <input type={f.type} min={f.type==="number"?0:undefined} value={calcDraft[f.k]||""} onChange={e=>setCalcDraft(d=>({...d,[f.k]:e.target.value}))} placeholder={f.ph} style={inp3}/>
+                </div>
               ))}
             </div>
-            <div style={{marginTop:14}}>
-              <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:8}}>Biological sex</label>
+            <div>
+              <label style={lbl3}>Biological sex</label>
               <div style={{display:"flex",gap:8}}>
                 {["male","female"].map(g=>(
-                  <button key={g} onClick={()=>setProfile(p=>({...p,gender:g}))} style={{flex:1,padding:10,borderRadius:tk.r,background:profile.gender===g?tk.teal:"transparent",color:profile.gender===g?"white":"var(--color-text-primary)",cursor:"pointer",fontSize:13,fontWeight:profile.gender===g?500:400,border:profile.gender===g?`1px solid ${tk.teal}`:tk.bdMed}}>
+                  <button key={g} onClick={()=>setCalcDraft(d=>({...d,gender:g}))} style={{flex:1,padding:"10px 0",borderRadius:tk.r,background:calcDraft.gender===g?tk.teal:"transparent",color:calcDraft.gender===g?"white":"#4A4A4A",cursor:"pointer",fontSize:13,fontWeight:calcDraft.gender===g?600:400,border:calcDraft.gender===g?`1.5px solid ${tk.teal}`:"1px solid #C0DD97",transition:"all 0.15s"}}>
                     {g==="male"?"♂ Male":"♀ Female"}
                   </button>
                 ))}
               </div>
             </div>
           </div>
+
+          {/* Primary goal */}
           <div style={{...crd,marginBottom:16}}>
-            <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 14px"}}>Primary goal</h2>
+            <h2 style={secHdr}>Primary goal</h2>
             <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
               {GOALS.map(g=>(
-                <button key={g.id} onClick={()=>setProfile(p=>({...p,goal:g.id}))} style={{padding:14,borderRadius:tk.r,border:profile.goal===g.id?`2px solid ${g.color}`:tk.bd,background:profile.goal===g.id?g.color+"12":"transparent",cursor:"pointer",textAlign:"left"}}>
+                <button key={g.id} onClick={()=>setCalcDraft(d=>({...d,goal:g.id}))} style={{padding:14,borderRadius:tk.r,border:calcDraft.goal===g.id?`2px solid ${g.color}`:"1px solid #C0DD97",background:calcDraft.goal===g.id?g.color+"12":"transparent",cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
                   <div style={{fontSize:22,marginBottom:4}}>{g.icon}</div>
-                  <div style={{fontSize:13,fontWeight:500}}>{g.label}</div>
-                  <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:2}}>{g.adj>0?"+":""}{g.adj} kcal vs TDEE</div>
+                  <div style={{fontSize:13,fontWeight:calcDraft.goal===g.id?600:400,color:"#1a1a1a"}}>{g.label}</div>
+                  <div style={{fontSize:11,color:"#888",marginTop:2}}>{g.adj>0?"+":""}{g.adj} kcal vs TDEE</div>
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Activity level */}
           <div style={{...crd,marginBottom:16}}>
-            <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 14px"}}>Activity level</h2>
+            <h2 style={secHdr}>Activity level</h2>
             {ACTIVITY.map(a=>(
-              <button key={a.id} onClick={()=>setProfile(p=>({...p,activityLevel:a.id}))} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"11px 14px",borderRadius:tk.r,border:profile.activityLevel===a.id?`2px solid ${tk.teal}`:tk.bd,background:profile.activityLevel===a.id?tk.tealSurf:"transparent",cursor:"pointer",marginBottom:6,textAlign:"left"}}>
-                <div><div style={{fontSize:13,fontWeight:profile.activityLevel===a.id?500:400,color:profile.activityLevel===a.id?tk.tealText:"var(--color-text-primary)"}}>{a.label}</div><div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{a.desc}</div></div>
-                <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>×{a.mult}</span>
+              <button key={a.id} onClick={()=>setCalcDraft(d=>({...d,activityLevel:a.id}))} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"11px 14px",borderRadius:tk.r,border:calcDraft.activityLevel===a.id?`2px solid ${tk.teal}`:"1px solid #C0DD97",background:calcDraft.activityLevel===a.id?tk.tealSurf:"transparent",cursor:"pointer",marginBottom:6,textAlign:"left",transition:"all 0.15s"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:calcDraft.activityLevel===a.id?600:400,color:calcDraft.activityLevel===a.id?tk.tealText:"#1a1a1a"}}>{a.label}</div>
+                  <div style={{fontSize:11,color:"#888"}}>{a.desc}</div>
+                </div>
+                <span style={{fontSize:11,color:"#aaa",fontWeight:500}}>×{a.mult}</span>
               </button>
             ))}
           </div>
-          {macros&&(
-            <div style={{...crd,border:`2px solid ${tk.teal}`}}>
-              <h2 style={{fontSize:13,fontWeight:500,margin:"0 0 16px"}}>Your results</h2>
+
+          {/* Live results */}
+          {liveCalcMacros&&(
+            <div style={{...crd,background:"#EAF3DE",border:`1.5px solid #C0DD97`,marginBottom:20}}>
+              <h2 style={secHdr}>Your targets</h2>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
-                {[["BMR",macros.bmr,"kcal/day"],["TDEE",macros.tdee,"kcal/day"],["Daily target",macros.targetCal,"kcal/day"]].map(([l,v,d])=>(
-                  <div key={l} style={{textAlign:"center",background:"var(--color-background-secondary)",borderRadius:tk.r,padding:"12px 8px"}}>
-                    <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:4}}>{l}</div>
-                    <div style={{fontSize:22,fontWeight:500,color:tk.teal}}>{v}</div>
-                    <div style={{fontSize:9,color:"var(--color-text-tertiary)",marginTop:2}}>{d}</div>
+                {[["BMR",liveCalcMacros.bmr,"kcal/day"],["TDEE",liveCalcMacros.tdee,"kcal/day"],["Daily target",liveCalcMacros.targetCal,"kcal/day"]].map(([l,v,d])=>(
+                  <div key={l} style={{textAlign:"center",background:"rgba(255,255,255,0.7)",borderRadius:tk.r,padding:"14px 8px"}}>
+                    <div style={{fontSize:11,color:"#5a7a52",marginBottom:4}}>{l}</div>
+                    <div style={{fontSize:24,fontWeight:600,color:"#2D5A27"}}>{v}</div>
+                    <div style={{fontSize:9,color:"#7a9a72",marginTop:2,textTransform:"uppercase",letterSpacing:"0.07em"}}>{d}</div>
                   </div>
                 ))}
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
-                {[["Protein",macros.proteinG+"g",tk.blue],["Carbs",macros.carbG+"g",tk.green],["Fat",macros.fatG+"g",tk.coral]].map(([l,v,c])=>(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+                {[["Protein",liveCalcMacros.proteinG+"g",tk.blue],["Carbs",liveCalcMacros.carbG+"g",tk.green],["Fat",liveCalcMacros.fatG+"g",tk.coral]].map(([l,v,c])=>(
                   <div key={l} style={{borderLeft:`3px solid ${c}`,paddingLeft:12}}>
-                    <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{l}</div>
-                    <div style={{fontSize:20,fontWeight:500,color:c,marginTop:2}}>{v}</div>
+                    <div style={{fontSize:12,color:"#5a7a52"}}>{l}</div>
+                    <div style={{fontSize:22,fontWeight:600,color:c,marginTop:2}}>{v}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Save */}
+          {calcStatus==='ok'&&(
+            <div style={{textAlign:"center",fontSize:14,fontWeight:500,color:"#2D5A27",marginBottom:12}}>Profile saved ✓</div>
+          )}
+          {calcStatus==='err'&&(
+            <div style={{textAlign:"center",fontSize:13,color:"#c00",marginBottom:12}}>Save failed — please try again.</div>
+          )}
+          <button onClick={saveProfile} disabled={saving3} style={{width:"100%",height:48,borderRadius:40,border:"none",background:saving3?"#ccc":"#E8621A",color:"#fff",fontSize:15,fontWeight:600,cursor:saving3?"default":"pointer",letterSpacing:"0.01em",transition:"background 0.15s",boxShadow:saving3?"none":"0 2px 12px rgba(232,98,26,0.30)"}}>
+            {saving3?"Saving…":"Save my profile"}
+          </button>
+          <p style={{textAlign:"center",fontSize:11,color:"#aaa",marginTop:10}}>Saves your name, targets, and goals — updates the dashboard and nav immediately.</p>
         </div>
       )}
     </div>
-  );
+  );}
 
   // ── RECIPES ──────────────────────────────────────────────────────────────────
   if(tab==="recipes") return (
