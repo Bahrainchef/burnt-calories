@@ -286,6 +286,16 @@ const WORKOUTS = [
   {day:"Day 6",focus:"Arms + Cardio",emoji:"💫",exs:[["Close-Grip Bench","12×3","70% 1RM",""],["Triceps Pushdown","12×3","70%","V-Bar attachment"],["Barbell Curl","12×3","70%",""],["Hammer Curl","12×3","70%","Alternate arms"],["Treadmill Intervals","20 min","60–70%","20s run / 40s walk"],["X-Trainer Intervals","10 min","60–70%",""]]},
 ];
 
+// ─── Meal plan constants ─────────────────────────────────────────────────────────
+const DAYS_OF_WEEK = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const MEAL_SLOTS = [
+  {id:'breakfast', label:'Breakfast',        cat:'Breakfast', pct:0.22},
+  {id:'snack1',    label:'Morning snack',    cat:'Snack',     pct:0.10},
+  {id:'lunch',     label:'Lunch',            cat:'Lunch',     pct:0.25},
+  {id:'snack2',    label:'Afternoon snack',  cat:'Snack',     pct:0.10},
+  {id:'dinner',    label:'Dinner',           cat:'Dinner',    pct:0.28},
+];
+
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 function calcMacros(pro) {
   if (!pro.weight || !pro.height || !pro.age) return null;
@@ -312,6 +322,53 @@ function recipeTotals(recipe) {
   ings.forEach(ri=>{const m=ingMacros(ri);cal+=m.cal;p+=m.p;c+=m.c;f+=m.f;fi+=m.fi;});
   const s=recipe.serves||1;
   return {cal:Math.round(cal/s),p:Math.round(p/s),c:Math.round(c/s),f:Math.round(f/s),fi:Math.round(fi/s)};
+}
+
+function generateWeeklyPlan(client, recipes) {
+  const subject={...client,age:String(client.age),weight:String(client.weight),height:String(client.height)};
+  const m=calcMacros(subject);
+  if(!m) return null;
+  const bySlot={};
+  MEAL_SLOTS.forEach(slot=>{
+    const all=recipes.filter(r=>r.cat===slot.cat);
+    const goalFirst=all.filter(r=>parseArr(r.goal).includes(client.goal));
+    const rest=all.filter(r=>!parseArr(r.goal).includes(client.goal));
+    bySlot[slot.id]=[...goalFirst,...rest];
+  });
+  const days=DAYS_OF_WEEK.map((day,di)=>({
+    day, dayIdx:di,
+    meals:MEAL_SLOTS.map((slot,si)=>{
+      const pool=bySlot[slot.id];
+      if(!pool.length) return {slotId:slot.id,recipeId:null};
+      return {slotId:slot.id, recipeId:pool[(di*2+si*3)%pool.length].id};
+    }),
+  }));
+  return {clientId:client.id, days, macros:m};
+}
+
+function buildShoppingList(plan, recipes, ingredients) {
+  const totals={};
+  plan.days.forEach(day=>{
+    day.meals.forEach(meal=>{
+      if(!meal.recipeId) return;
+      const rec=recipes.find(r=>r.id===meal.recipeId);
+      if(!rec) return;
+      const serves=rec.serves||1;
+      parseArr(rec.ings).forEach(ri=>{
+        if(!totals[ri.id]) {
+          const ing=ingredients.find(i=>i.id===ri.id);
+          if(!ing) return;
+          totals[ri.id]={id:ri.id,name:ing.name,cat:ing.cat,totalAmt:0,recipeNames:new Set()};
+        }
+        totals[ri.id].totalAmt+=ri.amt/serves;
+        totals[ri.id].recipeNames.add(rec.name);
+      });
+    });
+  });
+  return Object.values(totals)
+    .filter(x=>x.name)
+    .map(x=>({...x,totalAmt:Math.round(x.totalAmt),recipeNames:[...x.recipeNames]}))
+    .sort((a,b)=>a.cat.localeCompare(b.cat)||a.name.localeCompare(b.name));
 }
 
 // ─── Primitives ─────────────────────────────────────────────────────────────────
@@ -826,8 +883,11 @@ export default function BurntCaloriesApp() {
   const [newClientMode,setNewClientMode] = useState(false);
   const [clientStatus,setClientStatus] = useState(null);
   const [calcDraft,setCalcDraft] = useState({...{name:"Paul",gender:"male",age:"40",weight:"90",height:"180",goal:"fat_loss",activityLevel:"very"}});
-  const [calcStatus,setCalcStatus] = useState(null); // null | 'saving' | 'ok' | 'err'
+  const [calcStatus,setCalcStatus] = useState(null);
   const [profileId,setProfileId] = useState(null);
+  const [planClientId,setPlanClientId] = useState(null);
+  const [currentPlan,setCurrentPlan] = useState(null);
+  const [planView,setPlanView] = useState('plan'); // 'plan' | 'shopping'
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
   useEffect(()=>{
@@ -962,6 +1022,7 @@ export default function BurntCaloriesApp() {
     {id:"dashboard",   label:"Dashboard",   icon:"📊"},
     {id:"calculator",  label:"Calculator",  icon:"🧮"},
     {id:"recipes",     label:"Recipes",     icon:"🍽️"},
+    {id:"plans",       label:"Meal plans",  icon:"📅"},
     {id:"builder",     label:"Meal builder",icon:"🔧"},
     {id:"ingredients", label:"Ingredients", icon:"🌿"},
     {id:"clients",     label:"Clients",     icon:"👥"},
@@ -1454,6 +1515,212 @@ export default function BurntCaloriesApp() {
               </div>
             );
           })()}
+        </div>
+      )}
+    </div>
+  );}
+
+  // ── MEAL PLANS ───────────────────────────────────────────────────────────────
+  if(tab==="plans") {
+    const planSubjects=[
+      {id:'me',...profile,displayName:profile.name+' (me)',age:+profile.age||0,weight:+profile.weight||0,height:+profile.height||0},
+      ...clients.map(c=>({...c,displayName:c.name})),
+    ];
+    const selSubject=planSubjects.find(s=>s.id===planClientId)||null;
+    const selMacros=selSubject?calcMacros({...selSubject,age:String(selSubject.age),weight:String(selSubject.weight),height:String(selSubject.height)}):null;
+    const shoppingList=currentPlan?buildShoppingList(currentPlan,recipes,ingredients):[];
+    const shoppingGrouped=shoppingList.reduce((acc,item)=>({...acc,[item.cat]:[...(acc[item.cat]||[]),item]}),{});
+
+    function handleGenerate() {
+      if(!selSubject||!selMacros) return;
+      setCurrentPlan(generateWeeklyPlan(selSubject,recipes));
+      setPlanView('plan');
+    }
+
+    function handlePrintShopping() {
+      const grouped=shoppingGrouped;
+      const rowsHtml=Object.entries(grouped).map(([cat,items])=>
+        `<tr><td colspan="3" style="padding:10px 8px 4px;font-size:11px;font-weight:700;color:#2D5A27;text-transform:uppercase;letter-spacing:0.07em;background:#EAF3DE;border-top:1px solid #C0DD97">${cat}</td></tr>`+
+        items.map(item=>`<tr><td style="padding:6px 8px;font-size:13px">${item.name}</td><td style="padding:6px 8px;font-size:13px;color:#555;text-align:right">${item.totalAmt}g</td><td style="padding:6px 8px;font-size:11px;color:#999">${item.recipeNames.slice(0,2).join(', ')}${item.recipeNames.length>2?'…':''}</td></tr>`).join('')
+      ).join('');
+      const goalInfo=GOALS.find(g=>g.id===selSubject?.goal);
+      const w=window.open('','_blank','width=700,height=900');
+      w.document.write(`<!DOCTYPE html><html><head><title>Shopping list — ${selSubject?.displayName}</title>
+        <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#1a1a1a}h1{font-size:22px;margin:0 0 4px}p{font-size:12px;color:#888;margin:0 0 24px}table{width:100%;border-collapse:collapse}td{border-bottom:1px solid #f0f0f0}.logo{margin-top:40px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999}@media print{button{display:none}}</style>
+        </head><body>
+        <h1>Weekly shopping list</h1>
+        <p>${selSubject?.displayName} · ${goalInfo?.label||''} · ${selMacros?.targetCal||''} kcal/day · 7-day plan · Burnt Calories</p>
+        <table>${rowsHtml}</table>
+        <div class="logo"><strong style="color:#E8621A">Burnt Calories</strong> — burntcalories.com</div>
+        <div style="text-align:center;margin-top:20px"><button onclick="window.print()" style="padding:10px 24px;background:#E8621A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Print / Save PDF</button></div>
+        </body></html>`);
+      w.document.close();
+    }
+
+    return (
+    <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
+      {Nav}{wrap(
+        <div style={{display:"grid",gridTemplateColumns:"220px 1fr",gap:20,alignItems:"start"}}>
+
+          {/* ── Sidebar: client list ── */}
+          <div>
+            <Hdr title="Meal plans" sub="Auto-generate 7-day plans"/>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {planSubjects.map(s=>{
+                const sm=calcMacros({...s,age:String(s.age),weight:String(s.weight),height:String(s.height)});
+                const g=GOALS.find(x=>x.id===s.goal);
+                const active=planClientId===s.id;
+                return (
+                  <div key={s.id} onClick={()=>{setPlanClientId(s.id);setCurrentPlan(null);setPlanView('plan');}}
+                    style={{...crd,cursor:"pointer",padding:"12px 14px",border:active?`2px solid ${tk.teal}`:tk.bd}}>
+                    <div style={{fontSize:13,fontWeight:500,marginBottom:3}}>{s.displayName}</div>
+                    {sm&&<div style={{fontSize:10,color:"var(--color-text-secondary)"}}>{sm.targetCal} kcal · {sm.proteinG}g P</div>}
+                    {g&&<div style={{marginTop:4}}><Pill text={`${g.icon} ${g.label}`} color={g.color}/></div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Main content ── */}
+          <div>
+            {!selSubject&&(
+              <div style={{...crd,textAlign:"center",padding:60}}>
+                <div style={{fontSize:36,marginBottom:12}}>📅</div>
+                <p style={{color:"var(--color-text-secondary)",fontSize:13}}>Select a client to generate their personalised 7-day meal plan.</p>
+              </div>
+            )}
+
+            {selSubject&&!currentPlan&&selMacros&&(
+              <div style={{...crd,maxWidth:560}}>
+                <h2 style={{fontSize:16,fontWeight:600,margin:"0 0 4px"}}>{selSubject.displayName}</h2>
+                <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:"0 0 20px"}}>{selSubject.age}y · {selSubject.weight}kg · {GOALS.find(g=>g.id===selSubject.goal)?.label}</p>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
+                  {[["Daily calories",selMacros.targetCal+" kcal",tk.teal],["Protein",selMacros.proteinG+"g",tk.blue],["Carbs",selMacros.carbG+"g",tk.green],["Fat",selMacros.fatG+"g",tk.coral]].map(([l,v,c])=>(
+                    <div key={l} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:"12px 10px",textAlign:"center"}}>
+                      <div style={{fontSize:18,fontWeight:600,color:c}}>{v}</div>
+                      <div style={{fontSize:10,color:"var(--color-text-tertiary)",marginTop:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{padding:"12px 16px",background:"#EAF3DE",borderRadius:tk.r,marginBottom:20,fontSize:12,color:"#2D5A27"}}>
+                  Recipes will be matched to <strong>{selSubject.displayName}'s</strong> goal and rotated for variety across all 7 days.
+                </div>
+                <button onClick={handleGenerate} style={{width:"100%",height:48,borderRadius:40,border:"none",background:"#E8621A",color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",boxShadow:"0 2px 12px rgba(232,98,26,0.30)"}}>
+                  Generate 7-day plan
+                </button>
+              </div>
+            )}
+
+            {currentPlan&&(
+              <div>
+                {/* Header bar */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <h2 style={{fontSize:16,fontWeight:600,margin:0}}>{selSubject?.displayName} — 7-day plan</h2>
+                    {selMacros&&<Pill text={`${selMacros.targetCal} kcal/day target`} color={tk.tealText} bg={tk.tealSurf}/>}
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={handleGenerate} style={{padding:"7px 14px",borderRadius:tk.r,fontSize:12,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>↺ Regenerate</button>
+                    <button onClick={()=>setPlanView(v=>v==='plan'?'shopping':'plan')} style={{padding:"7px 14px",borderRadius:tk.r,fontSize:12,cursor:"pointer",border:`1px solid ${tk.teal}`,background:planView==='shopping'?tk.teal:"transparent",color:planView==='shopping'?"white":tk.teal,fontWeight:500}}>
+                      {planView==='plan'?'🛒 Shopping list':'📅 Meal plan'}
+                    </button>
+                    {planView==='shopping'&&<button onClick={handlePrintShopping} style={{padding:"7px 14px",borderRadius:tk.r,fontSize:12,cursor:"pointer",background:"#E8621A",color:"white",border:"none",fontWeight:500}}>🖨 Print / Order</button>}
+                  </div>
+                </div>
+
+                {/* ── Plan view ── */}
+                {planView==='plan'&&(
+                  <div style={{overflowX:"auto",paddingBottom:8}}>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(190px,1fr))",gap:10,minWidth:1340}}>
+                      {currentPlan.days.map((day,di)=>{
+                        let dayCal=0,dayP=0,dayC=0,dayF=0;
+                        day.meals.forEach(meal=>{
+                          const r=recipes.find(x=>x.id===meal.recipeId);
+                          if(r){const m=recipeTotals(r);dayCal+=m.cal;dayP+=m.p;dayC+=m.c;dayF+=m.f;}
+                        });
+                        const pct=selMacros?Math.min(100,Math.round(dayCal/selMacros.targetCal*100)):0;
+                        return (
+                          <div key={di} style={{...crd,padding:0,overflow:"hidden"}}>
+                            {/* Day header */}
+                            <div style={{background:"#2D5A27",padding:"8px 12px"}}>
+                              <div style={{fontSize:11,fontWeight:600,color:"#fff",letterSpacing:"0.05em"}}>{day.day.toUpperCase()}</div>
+                            </div>
+                            {/* Meal slots */}
+                            <div style={{padding:"8px 10px",display:"flex",flexDirection:"column",gap:6}}>
+                              {day.meals.map((meal,mi)=>{
+                                const slot=MEAL_SLOTS[mi];
+                                const r=recipes.find(x=>x.id===meal.recipeId);
+                                const m=r?recipeTotals(r):null;
+                                return (
+                                  <div key={mi} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:"7px 9px"}}>
+                                    <div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{slot.label}</div>
+                                    {r?(
+                                      <>
+                                        <div style={{fontSize:11,fontWeight:500,lineHeight:1.3,marginBottom:3}}>{r.emoji} {r.name}</div>
+                                        <div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{m.cal} kcal · <span style={{color:tk.blue}}>{m.p}g P</span></div>
+                                      </>
+                                    ):(
+                                      <div style={{fontSize:11,color:"var(--color-text-tertiary)",fontStyle:"italic"}}>No recipe</div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {/* Day macro total */}
+                            <div style={{padding:"8px 10px",borderTop:tk.bd}}>
+                              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--color-text-secondary)",marginBottom:5}}>
+                                <span>{Math.round(dayCal)} kcal</span>
+                                <span>{pct}% of target</span>
+                              </div>
+                              <div style={{height:4,background:"var(--color-background-secondary)",borderRadius:2}}>
+                                <div style={{height:"100%",width:pct+"%",background:pct>=85&&pct<=115?"#2D5A27":pct<70?"#E24B4A":"#C47C0A",borderRadius:2,transition:"width 0.3s"}}/>
+                              </div>
+                              <div style={{display:"flex",gap:8,marginTop:5,fontSize:9,color:"var(--color-text-tertiary)"}}>
+                                <span style={{color:tk.blue}}>{Math.round(dayP)}P</span>
+                                <span style={{color:tk.green}}>{Math.round(dayC)}C</span>
+                                <span style={{color:tk.coral}}>{Math.round(dayF)}F</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Shopping list view ── */}
+                {planView==='shopping'&&(
+                  <div style={{...crd}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                      <div>
+                        <h3 style={{fontSize:14,fontWeight:600,margin:"0 0 2px",color:"#2D5A27"}}>Weekly shopping list</h3>
+                        <p style={{fontSize:11,color:"var(--color-text-secondary)",margin:0}}>{shoppingList.length} ingredients across {currentPlan.days.length * MEAL_SLOTS.length} meals</p>
+                      </div>
+                      <div style={{display:"flex",gap:4}}>
+                        <button onClick={()=>{const txt=shoppingList.map(i=>`${i.name} — ${i.totalAmt}g`).join('\n');navigator.clipboard.writeText(txt);}} style={{padding:"6px 12px",borderRadius:tk.r,fontSize:12,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>Copy</button>
+                        <button onClick={handlePrintShopping} style={{padding:"6px 12px",borderRadius:tk.r,fontSize:12,cursor:"pointer",background:"#E8621A",color:"white",border:"none",fontWeight:500}}>🖨 Print / Order</button>
+                      </div>
+                    </div>
+                    {Object.entries(shoppingGrouped).map(([cat,items])=>(
+                      <div key={cat} style={{marginBottom:16}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#2D5A27",textTransform:"uppercase",letterSpacing:"0.07em",padding:"6px 0",borderBottom:`2px solid #C0DD97`,marginBottom:8}}>{cat}</div>
+                        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 3fr",gap:6}}>
+                          {items.map(item=>(
+                            <div key={item.id} style={{display:"contents"}}>
+                              <span style={{fontSize:13,fontWeight:500}}>{item.name}</span>
+                              <span style={{fontSize:13,color:"#2D5A27",fontWeight:600,textAlign:"right"}}>{item.totalAmt}g</span>
+                              <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{item.recipeNames.slice(0,3).join(', ')}{item.recipeNames.length>3?'…':''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
