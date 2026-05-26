@@ -431,8 +431,15 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
   const [photoUploading,setPhotoUploading] = useState(false);
   const [photoErr,setPhotoErr]           = useState(null);
   const [photoDragOver,setPhotoDragOver] = useState(false);
+  const [multiplier,setMultiplier]       = useState(1);
+  const [customQty,setCustomQty]         = useState('');
   const photoInputRef = useRef(null);
   const hasPhoto = !!localPhoto;
+
+  function fmtAmt(g) {
+    const t=Math.round(g);
+    return t>=1000?(t/1000).toFixed(t%1000===0?0:1)+'kg':t+'g';
+  }
 
   async function handlePhotoFile(file) {
     if(!file) return;
@@ -516,11 +523,6 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
   }
   return (
     <div style={{marginTop:16,...crd,borderRadius:tk.rXl,padding:0,overflow:"hidden"}}>
-      <div style={{padding:"12px 20px 0",borderBottom:"none"}}>
-        <button onClick={onClose} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:13,fontWeight:500,color:"#E8621A",background:"transparent",border:"none",cursor:"pointer",padding:0,marginBottom:4}}>
-          ← Back to recipes
-        </button>
-      </div>
       {/* Photo zone */}
       {hasPhoto ? (
         <div style={{position:"relative",width:"100%",height:240,cursor:"pointer"}} onClick={()=>photoInputRef.current?.click()}
@@ -564,18 +566,37 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
         </div>
         <p style={{fontSize:13,color:"var(--color-text-secondary)",lineHeight:1.6,marginBottom:16}}>{recipe.desc}</p>
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>{tags.map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"16px 12px",marginBottom:24}}>
-          {[["Calories",m.cal,""],["Protein",m.p,"g"],["Carbs",m.c,"g"],["Fat",m.f,"g"],["Fibre",m.fi,"g"]].map(([l,v,u])=>(
+        {multiplier>1&&<div style={{textAlign:"center",fontSize:11,fontWeight:500,color:tk.teal,marginBottom:4}}>Total for {multiplier} serving{multiplier!==1?"s":""}</div>}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"16px 12px",marginBottom:16}}>
+          {[["Calories",Math.round(m.cal*multiplier),""],["Protein",Math.round(m.p*multiplier),"g"],["Carbs",Math.round(m.c*multiplier),"g"],["Fat",Math.round(m.f*multiplier),"g"],["Fibre",Math.round(m.fi*multiplier),"g"]].map(([l,v,u])=>(
             <div key={l} style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:500}}>{v}{u}</div><div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:3}}>{l}</div></div>
           ))}
         </div>
+
+        {/* Serving multiplier */}
+        <div style={{marginBottom:20,padding:"12px 14px",background:"var(--color-background-secondary)",borderRadius:tk.r}}>
+          <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:8,fontWeight:500}}>Serving multiplier</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            {[1,2,5,10,20,50,100].map(n=>(
+              <button key={n} onClick={()=>{setMultiplier(n);setCustomQty('');}}
+                style={{padding:"5px 11px",borderRadius:20,border:`1px solid ${multiplier===n?tk.teal:"#C0DD97"}`,background:multiplier===n?tk.teal:"transparent",color:multiplier===n?"white":tk.teal,fontSize:12,fontWeight:multiplier===n?600:400,cursor:"pointer",transition:"all 0.12s"}}>
+                {n}×
+              </button>
+            ))}
+            <input type="number" min={1} value={customQty}
+              onChange={e=>{setCustomQty(e.target.value);const v=+e.target.value;if(v>=1)setMultiplier(v);}}
+              placeholder="Custom qty"
+              style={{width:96,padding:"5px 10px",borderRadius:20,border:"1px solid #C0DD97",fontSize:12,outline:"none",background:"var(--color-background-primary)"}}/>
+          </div>
+        </div>
+
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
           <div>
             <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Ingredients</h3>
             {resolved.map((ing,i)=>(
               <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:tk.bd,fontSize:12}}>
-                <div><span style={{fontWeight:500}}>{ing.name}</span><span style={{color:"var(--color-text-tertiary)",marginLeft:6}}>{ing.amt}g</span></div>
-                <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{Math.round(ing.mx.cal)} kcal · <span style={{color:tk.blue}}>{Math.round(ing.mx.p)}P</span></div>
+                <div><span style={{fontWeight:500}}>{ing.name}</span><span style={{color:"var(--color-text-tertiary)",marginLeft:6}}>{fmtAmt(ing.amt*multiplier)}</span></div>
+                <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{Math.round(ing.mx.cal*multiplier)} kcal · <span style={{color:tk.blue}}>{Math.round(ing.mx.p*multiplier)}P</span></div>
               </div>
             ))}
             <h3 style={{fontSize:13,fontWeight:500,margin:"20px 0 12px"}}>Method</h3>
@@ -1276,9 +1297,16 @@ export default function BurntCaloriesApp() {
       {Nav}{wrap(<>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
           <Hdr title="Recipe library" sub={`${recipes.length} recipes · ${recipes.filter(r=>r.custom).length} custom · full macro breakdown · Burnt Calories`}/>
-          <button onClick={()=>{setShowUploader(u=>!u);setSelRecipe(null);}} style={{padding:"9px 18px",background:showUploader?"var(--color-background-secondary)":tk.teal,color:showUploader?"var(--color-text-primary)":"white",borderRadius:tk.rLg,cursor:"pointer",fontSize:13,fontWeight:500,border:showUploader?tk.bd:"none",whiteSpace:"nowrap"}}>
-            {showUploader?"Cancel":"+ Add recipe"}
-          </button>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {selRecipe&&!showUploader&&(
+              <button onClick={()=>setSelRecipe(null)} style={{padding:"9px 18px",borderRadius:40,fontSize:13,fontWeight:500,cursor:"pointer",background:"white",color:"#2D5A27",border:"1px solid #2D5A27",whiteSpace:"nowrap"}}>
+                ← All recipes
+              </button>
+            )}
+            <button onClick={()=>{setShowUploader(u=>!u);setSelRecipe(null);}} style={{padding:"9px 18px",background:showUploader?"var(--color-background-secondary)":tk.teal,color:showUploader?"var(--color-text-primary)":"white",borderRadius:tk.rLg,cursor:"pointer",fontSize:13,fontWeight:500,border:showUploader?tk.bd:"none",whiteSpace:"nowrap"}}>
+              {showUploader?"Cancel":"+ Add recipe"}
+            </button>
+          </div>
         </div>
         {showUploader&&<RecipeUploader ingredients={ingredients} onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
         {!showUploader&&<>
@@ -1292,7 +1320,7 @@ export default function BurntCaloriesApp() {
               {GOALS.map(g=><option key={g.id} value={g.id}>{g.icon} {g.label}</option>)}
             </select>
           </div>
-          {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null} onUpdate={updateRecipe}/>}
+          {selRecipe&&<RecipeDetail key={selRecipe.id} recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null} onUpdate={updateRecipe}/>}
           <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:14,marginTop:selRecipe?16:0}}>{filteredRecipes.length} recipes</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
             {filteredRecipes.map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>{
