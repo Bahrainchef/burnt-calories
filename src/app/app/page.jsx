@@ -28,178 +28,8 @@ const card = { background:"var(--color-background-primary)", border:tk.bd, borde
 const CAT_C = { Protein:tk.blue, Dairy:tk.purple, Carbohydrate:tk.teal, Vegetable:tk.green, Fat:tk.coral, Fruit:tk.amber, Spice:tk.red, Herb:tk.teal, Other:tk.gray };
 const CAT_S = { Protein:tk.blueSurf, Dairy:tk.purpleSurf, Carbohydrate:tk.tealSurf, Vegetable:tk.greenSurf, Fat:tk.coralSurf, Fruit:tk.amberSurf, Spice:"#FEF0F0", Herb:tk.tealSurf, Other:"#F1EFE8" };
 
-// ─── Master ingredient database ────────────────────────────────────────────────
-const BASE_ING = [
-  // PROTEINS — POULTRY
-  {id:1,  name:"Chicken Breast",           cat:"Protein", sub:"Poultry",    ref:100, cal:165, p:31,  c:0,   f:3.6, fi:0,   benefits:["Leanest muscle-building protein","Niacin & B6 energy metabolism","Very low saturated fat","High bioavailability amino acids","High bioavailability complete protein"]},
-  {id:2,  name:"Chicken Thigh (skinless)", cat:"Protein", sub:"Poultry",    ref:100, cal:177, p:25,  c:0,   f:8.3, fi:0,   benefits:["Richer flavour aids adherence","Zinc & iron for immunity","More forgiving to cook","Higher calories for bulking","Juicier texture"]},
-  {id:3,  name:"Turkey Breast",            cat:"Protein", sub:"Poultry",    ref:100, cal:135, p:30,  c:0,   f:1,   fi:0,   benefits:["Leanest available poultry","Tryptophan for serotonin & sleep","Selenium antioxidant","Niacin energy metabolism","Phosphorus for bones"]},
-  {id:4,  name:"Turkey Mince (lean)",      cat:"Protein", sub:"Poultry",    ref:100, cal:149, p:29,  c:0,   f:2,   fi:0,   benefits:["Bolognese & kofta base","Low saturated fat","B12 & zinc rich","Digestive friendly","Meal prep hero"]},
-  // PROTEINS — BEEF
-  {id:5,  name:"Rump Steak",               cat:"Protein", sub:"Beef",       ref:100, cal:197, p:28,  c:0,   f:9,   fi:0,   benefits:["Haem iron for oxygen transport","Zinc for testosterone","Creatine precursor","B12 energy","Performance nutrition staple"]},
-  {id:6,  name:"Sirloin Steak",            cat:"Protein", sub:"Beef",       ref:100, cal:207, p:26,  c:0,   f:11,  fi:0,   benefits:["Premium lean cut","CLA anti-inflammatory fat","Phosphorus for bones","Niacin metabolism","Restaurant quality"]},
-  {id:7,  name:"Ribeye Steak",             cat:"Protein", sub:"Beef",       ref:100, cal:291, p:24,  c:0,   f:21,  fi:0,   benefits:["Highest flavour beef cut","Rich in CLA anti-inflammatory","Saturated fat hormone support","B12 & zinc dense","Restaurant premium centrepiece"]},
-  {id:8,  name:"Eye Fillet (Tenderloin)",  cat:"Protein", sub:"Beef",       ref:100, cal:174, p:28,  c:0,   f:6,   fi:0,   benefits:["Leanest premium beef cut","Tender easy digestion","High zinc & iron","Leucine for muscle synthesis","Low fat luxury"]},
-  {id:9,  name:"Beef Mince (5% fat)",      cat:"Protein", sub:"Beef",       ref:100, cal:137, p:21,  c:0,   f:5.5, fi:0,   benefits:["Budget versatile protein","Haem iron high","B-vitamin complex","Meal prep base","Bolognese & burger use"]},
-  {id:10, name:"Beef Mince (20% fat)",     cat:"Protein", sub:"Beef",       ref:100, cal:215, p:18,  c:0,   f:15,  fi:0,   benefits:["Calorie dense for muscle gain","Rich flavour","Saturated fat for hormones","Zinc & selenium","Bulking phase suitable"]},
-  // PROTEINS — LAMB
-  {id:11, name:"Lamb Leg (lean)",          cat:"Protein", sub:"Lamb",       ref:100, cal:191, p:28,  c:0,   f:8.8, fi:0,   benefits:["B12 very high","Haem iron absorption","CLA anti-inflammatory","Grass-fed omega-3","Arabic cuisine essential"]},
-  {id:12, name:"Lamb Mince",               cat:"Protein", sub:"Lamb",       ref:100, cal:262, p:21,  c:0,   f:19,  fi:0,   benefits:["Kofta & kebab base","B12 rich","Selenium antioxidant","High calorie for bulking","Gulf region staple"]},
-  {id:13, name:"Lamb Shoulder",            cat:"Protein", sub:"Lamb",       ref:100, cal:219, p:25,  c:0,   f:13,  fi:0,   benefits:["Slow-cook collagen release","Glycine for joints","Zinc immunity","Iron rich","Traditional Middle Eastern"]},
-  // PROTEINS — SEAFOOD
-  {id:14, name:"Salmon (Atlantic)",        cat:"Protein", sub:"Seafood",    ref:100, cal:208, p:20,  c:0,   f:13,  fi:0,   benefits:["Omega-3 EPA/DHA highest","Anti-inflammatory potent","Brain & heart health","Vitamin D source","Astaxanthin antioxidant"]},
-  {id:15, name:"Barramundi",               cat:"Protein", sub:"Seafood",    ref:100, cal:97,  p:20,  c:0,   f:1.8, fi:0,   benefits:["Very lean white fish","Sustainable catch","Mild flavour","Gulf region popular","Omega-3 moderate"]},
-  {id:16, name:"Tuna (canned, water)",     cat:"Protein", sub:"Seafood",    ref:100, cal:116, p:26,  c:0,   f:1,   fi:0,   benefits:["Portable convenience protein","Selenium antioxidant","Omega-3 EPA/DHA","Low calorie dense","Post-workout convenient option"]},
-  {id:17, name:"Tuna Steak (fresh)",       cat:"Protein", sub:"Seafood",    ref:100, cal:130, p:29,  c:0,   f:1.3, fi:0,   benefits:["Leanest premium fish","Potassium electrolyte","Niacin energy","B6 protein metabolism","Restaurant centrepiece"]},
-  {id:18, name:"Snapper (fillet)",         cat:"Protein", sub:"Seafood",    ref:100, cal:100, p:20,  c:0,   f:1.3, fi:0,   benefits:["Gulf & Indian Ocean catch","Magnesium source","Omega-3 moderate","Mild white fish","Anti-inflammatory"]},
-  {id:19, name:"Prawns (king)",            cat:"Protein", sub:"Seafood",    ref:100, cal:99,  p:21,  c:0.9, f:0.9, fi:0,   benefits:["Extremely lean luxury protein","Iodine thyroid health","Astaxanthin antioxidant","Low calorie","Phosphorus bone health"]},
-  // EGGS & DAIRY
-  {id:20, name:"Whole Egg",                cat:"Protein", sub:"Eggs",       ref:60,  cal:90,  p:7,   c:0.6, f:6,   fi:0,   benefits:["Complete amino acid profile","Choline brain & liver health","Lutein eye health","Vitamin D & B12","Best bioavailability protein"]},
-  {id:21, name:"Egg White",                cat:"Protein", sub:"Eggs",       ref:100, cal:52,  p:11,  c:0.7, f:0.2, fi:0,   benefits:["Pure albumin zero fat","Fast absorption","Low calorie","Complete amino acids","High protein breakfast essential"]},
-  {id:22, name:"Whey Protein Isolate",     cat:"Protein", sub:"Supplements",ref:30,  cal:110, p:25,  c:1,   f:0.5, fi:0,   benefits:["Fastest muscle absorption","BCAA leucine rich","Post-workout essential","Minimal lactose","Muscle protein synthesis"]},
-  // DAIRY — expanded
-  {id:23, name:"Greek Yogurt (0% fat)",    cat:"Dairy",   sub:"Yogurt",     ref:100, cal:59,  p:10,  c:3.6, f:0.4, fi:0,   benefits:["Live probiotic cultures","Gut microbiome support","Calcium bone density","Casein slow-release protein","Immune system support"]},
-  {id:24, name:"Greek Yogurt (full fat)",  cat:"Dairy",   sub:"Yogurt",     ref:100, cal:97,  p:9,   c:3.8, f:5,   fi:0,   benefits:["Higher fat for satiety","CLA anti-inflammatory","Probiotic cultures","Calcium & B12","Hormone support healthy fats"]},
-  {id:25, name:"Cottage Cheese (low fat)", cat:"Dairy",   sub:"Cheese",     ref:100, cal:98,  p:11,  c:3.4, f:4.3, fi:0,   benefits:["Casein overnight muscle repair","Night-time protein ideal","Calcium & phosphorus","High satiety low calorie","Ideal night-time protein snack"]},
-  {id:26, name:"Cream Cheese (lite)",      cat:"Dairy",   sub:"Cheese",     ref:30,  cal:69,  p:3.3, c:2.1, f:5.5, fi:0,   benefits:["Lower fat cream cheese","Calcium source","Spreads & sauces use","Protein moderate","Cooking flexibility"]},
-  {id:27, name:"Whipping Cream",           cat:"Dairy",   sub:"Cream",      ref:30,  cal:103, p:0.6, c:0.8, f:11,  fi:0,   benefits:["Calorie dense bulking aid","Fat-soluble vitamin carrier","Sauces & desserts","CLA source","Keto & high-fat protocols"]},
-  {id:28, name:"Milk (full fat)",          cat:"Dairy",   sub:"Milk",       ref:240, cal:149, p:8,   c:12,  f:8,   fi:0,   benefits:["Calcium & D combo","Casein + whey blend","Electrolyte recovery","B12 source","Bulking calorie density"]},
-  {id:29, name:"Milk (low fat 2%)",        cat:"Dairy",   sub:"Milk",       ref:240, cal:122, p:8,   c:12,  f:5,   fi:0,   benefits:["Balanced protein & carb","Calcium bone health","Lower calorie than full fat","B vitamins","Post-workout option"]},
-  {id:30, name:"Milk (skim)",              cat:"Dairy",   sub:"Milk",       ref:240, cal:83,  p:8,   c:12,  f:0.2, fi:0,   benefits:["Lowest fat dairy","High protein to calorie ratio","Calcium & potassium","B12 source","Fat loss protocols"]},
-  // CARBS — RICE
-  {id:31, name:"Brown Rice",               cat:"Carbohydrate", sub:"Rice",   ref:100, cal:123, p:2.6, c:26,  f:0.9, fi:1.8, benefits:["Complex sustained energy","Manganese source","Selenium antioxidant","Gluten-free naturally","Performance nutrition rice choice"]},
-  {id:32, name:"White Rice (long grain)",  cat:"Carbohydrate", sub:"Rice",   ref:100, cal:130, p:2.7, c:28,  f:0.3, fi:0.4, benefits:["Fast glycogen replenishment","Easy digestion","Low FODMAP gut friendly","Post-workout ideal","Electrolyte absorption"]},
-  {id:33, name:"Basmati Rice",             cat:"Carbohydrate", sub:"Rice",   ref:100, cal:121, p:2.7, c:25,  f:0.4, fi:0.7, benefits:["Lower GI than white rice","Fragrant aromatic texture","Indian & Arabic cuisine staple","Thiamine energy","B vitamins"]},
-  {id:34, name:"Jasmine Rice",             cat:"Carbohydrate", sub:"Rice",   ref:100, cal:129, p:2.5, c:28,  f:0.2, fi:0.3, benefits:["Thai aromatic soft texture","Quick cooking convenience","Potassium electrolyte","Easy protein pairing","Gulf & Asian fusion"]},
-  {id:35, name:"Wild Rice",                cat:"Carbohydrate", sub:"Rice",   ref:100, cal:101, p:4,   c:21,  f:0.3, fi:1.8, benefits:["Highest protein of all rices","Antioxidant rich","Zinc & magnesium","Lower GI","Nutty gourmet presentation"]},
-  {id:36, name:"Black Rice (Forbidden)",   cat:"Carbohydrate", sub:"Rice",   ref:100, cal:101, p:4.5, c:21,  f:0.8, fi:3.5, benefits:["Highest antioxidant rice","Anthocyanin brain health","Anti-inflammatory","Heart health","Iron & vitamin E"]},
-  {id:37, name:"Red Rice",                 cat:"Carbohydrate", sub:"Rice",   ref:100, cal:111, p:2.7, c:23,  f:0.8, fi:2.0, benefits:["Anthocyanin antioxidants","Iron rich","Low GI","Middle Eastern use","Gut health fibre"]},
-  // CARBS — GRAINS
-  {id:38, name:"Quinoa",                   cat:"Carbohydrate", sub:"Grains",  ref:100, cal:120, p:4.4, c:22,  f:1.9, fi:2.8, benefits:["Complete protein all 9 aminos","Gluten-free pseudo-grain","Iron & magnesium","Quercetin anti-inflammatory","Longevity superfood"]},
-  {id:39, name:"Oats (quick)",             cat:"Carbohydrate", sub:"Grains",  ref:100, cal:389, p:17,  c:66,  f:7,   fi:10,  benefits:["Beta-glucan cholesterol reduction","4hr sustained energy","Avenanthramides antioxidant","Prebiotic fibre","Ideal pre-training meal base"]},
-  {id:40, name:"Steel Cut Oats",           cat:"Carbohydrate", sub:"Grains",  ref:100, cal:375, p:14,  c:67,  f:7,   fi:10,  benefits:["Lowest GI oat variety","Maximum fibre retention","Longest satiety window","Heart health beta-glucan","Meal prep batch cook"]},
-  {id:41, name:"Freekeh",                  cat:"Carbohydrate", sub:"Grains",  ref:100, cal:135, p:4.9, c:28,  f:0.5, fi:6,   benefits:["Ancient Middle Eastern grain","Highest fibre grain variety","Prebiotic gut diversity","Iron & calcium","Smoked distinctive flavour"]},
-  {id:42, name:"Bulgur Wheat",             cat:"Carbohydrate", sub:"Grains",  ref:100, cal:83,  p:3.1, c:19,  f:0.2, fi:4.5, benefits:["Tabbouleh classic base","Low GI grain","Manganese bone health","B vitamins energy","Quick 5-min cook"]},
-  {id:43, name:"Couscous",                 cat:"Carbohydrate", sub:"Grains",  ref:100, cal:112, p:3.8, c:23,  f:0.2, fi:1.4, benefits:["Arabic cuisine tradition","Selenium rich","5-min cooking convenience","Low fat grain","Versatile base"]},
-  {id:44, name:"Buckwheat",                cat:"Carbohydrate", sub:"Grains",  ref:100, cal:92,  p:3.4, c:20,  f:0.6, fi:2.7, benefits:["Gluten-free pseudo-grain","Rutin blood vessel health","Blood sugar regulation","Complete amino acids","Magnesium source"]},
-  // CARBS — PASTA & BREAD
-  {id:45, name:"White Pasta",              cat:"Carbohydrate", sub:"Pasta",   ref:100, cal:158, p:5.8, c:31,  f:0.9, fi:1.8, benefits:["Energy dense pre-event","Easy digestion","B vitamins fortified","Performance carb load","Versatile base"]},
-  {id:46, name:"Wholemeal Pasta",          cat:"Carbohydrate", sub:"Pasta",   ref:100, cal:149, p:6.3, c:28,  f:1.1, fi:3.9, benefits:["Higher fibre lower GI","Magnesium rich","Sustained energy","Gut health support","Better satiety"]},
-  {id:47, name:"Chickpea Pasta",           cat:"Carbohydrate", sub:"Pasta",   ref:100, cal:181, p:12,  c:27,  f:3.5, fi:5,   benefits:["Highest protein pasta","Folate DNA synthesis","Resistant starch gut","Blood sugar stability","Plant protein combo"]},
-  {id:48, name:"Sweet Potato",             cat:"Carbohydrate", sub:"Root Veg",ref:100, cal:86,  p:1.6, c:20,  f:0.1, fi:3,   benefits:["Beta-carotene vitamin A","Low GI sustained energy","Potassium source","Anti-inflammatory","Performance carb for training days"]},
-  {id:49, name:"White Potato",             cat:"Carbohydrate", sub:"Root Veg",ref:100, cal:87,  p:2.3, c:20,  f:0.1, fi:1.8, benefits:["Potassium electrolyte","Resistant starch when cooled","Satiety index high","Vitamin C & B6","Glycogen replenishment"]},
-  {id:50, name:"Sourdough Bread",          cat:"Carbohydrate", sub:"Bread",   ref:40,  cal:98,  p:3.6, c:19,  f:0.8, fi:1,   benefits:["Fermentation improves gut health","Lower GI than white","Phytic acid reduced","Better mineral absorption","Lactic acid prebiotic"]},
-  {id:51, name:"Wholegrain Bread",         cat:"Carbohydrate", sub:"Bread",   ref:38,  cal:95,  p:4.2, c:17,  f:1.5, fi:2.7, benefits:["High fibre satiety","B vitamins complex","Lignans anti-inflammatory","Blood sugar stability","Cholesterol reduction"]},
-  {id:52, name:"Pita Bread (wholemeal)",   cat:"Carbohydrate", sub:"Bread",   ref:60,  cal:165, p:6,   c:31,  f:1.4, fi:4.5, benefits:["Middle Eastern tradition","Fibre rich","Low fat","Pocket for variety","Pairs with hummus"]},
-  {id:53, name:"Pita Bread (white)",       cat:"Carbohydrate", sub:"Bread",   ref:60,  cal:170, p:5.5, c:35,  f:0.7, fi:1.5, benefits:["Arabic bread tradition","Quick energy source","Low fat option","Dipping bread","Easy digestion"]},
-  {id:54, name:"Lavash Flatbread",         cat:"Carbohydrate", sub:"Bread",   ref:50,  cal:145, p:4.5, c:29,  f:1.5, fi:1.2, benefits:["Gulf region thin bread","Low calorie wrap","Iron fortified","Versatile meal base","Traditional culture"]},
-  {id:55, name:"Rye Bread",                cat:"Carbohydrate", sub:"Bread",   ref:32,  cal:83,  p:2.7, c:15,  f:1,   fi:1.9, benefits:["Lowest GI bread","Arabinoxylan gut fibre","Blood sugar stability","Satiety superior","Cholesterol support"]},
-  {id:56, name:"Burgen Soy-Lin Bread",     cat:"Carbohydrate", sub:"Bread",   ref:38,  cal:91,  p:5.4, c:12,  f:2.6, fi:3,   benefits:["Highest protein bread","Soy isoflavones","Low GI","Omega-3 linseeds","Highest protein bread available"]},
-  // VEGETABLES — expanded
-  {id:57, name:"Spinach",                  cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:23,  p:2.9, c:3.6, f:0.4, fi:2.2, benefits:["Iron for blood oxygen","Nitrates athletic performance","Lutein & zeaxanthin eyes","Vitamin K bone density","Folate cell health"]},
-  {id:58, name:"Kale",                     cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:35,  p:2.9, c:4.4, f:1.5, fi:4.1, benefits:["Vitamin K highest food","Sulforaphane anti-cancer","Calcium exceeds milk","Quercetin inflammation","Detox glucosinolates"]},
-  {id:59, name:"Rocket (Arugula)",         cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:25,  p:2.6, c:3.7, f:0.7, fi:1.6, benefits:["Nitric oxide precursor","Performance sport benefit","Glucosinolates detox","Peppery gourmet flavour","Folate source"]},
-  {id:60, name:"Cos Lettuce",              cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:17,  p:1.2, c:3.3, f:0.3, fi:2.1, benefits:["Low calorie high volume","Vitamin A beta-carotene","Folate heart health","Hydrating 95% water","Crunch texture"]},
-  {id:61, name:"Butter Lettuce",           cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:13,  p:1.4, c:2.2, f:0.2, fi:1.1, benefits:["Extremely low calorie","Soft delicate texture","Folate source","Vitamin K bone","High water content hydrating"]},
-  {id:62, name:"Iceberg Lettuce",          cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:14,  p:0.9, c:3.0, f:0.1, fi:1.2, benefits:["Very low calorie","96% water hydration","Vitamin K source","Volume eating tool","Wrap substitute"]},
-  {id:63, name:"Swiss Chard (Silverbeet)", cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:19,  p:1.8, c:3.7, f:0.2, fi:1.6, benefits:["Magnesium highest leafy green","Vitamin K bone density","Betalain antioxidants","Iron for blood","Anti-inflammatory"]},
-  {id:64, name:"Watercress",               cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:11,  p:2.3, c:1.3, f:0.1, fi:0.5, benefits:["Vitamin K very high","Anti-cancer PEITC","Vitamin C immune","Calcium bone health","Chlorophyll detox"]},
-  {id:65, name:"Broccoli",                 cat:"Vegetable", sub:"Brassicas",  ref:100, cal:34,  p:2.8, c:7,   f:0.4, fi:2.6, benefits:["Sulforaphane potent anti-cancer","Vitamin C immune boost","Folate DNA repair","Calcium mineral","Detox enzyme activator"]},
-  {id:66, name:"Cauliflower",              cat:"Vegetable", sub:"Brassicas",  ref:100, cal:25,  p:2,   c:5,   f:0.3, fi:2,   benefits:["Low-carb rice substitute","Vitamin C high","Choline brain health","Glucosinolates anti-cancer","Anti-inflammatory"]},
-  {id:67, name:"Brussels Sprouts",         cat:"Vegetable", sub:"Brassicas",  ref:100, cal:43,  p:3.4, c:9,   f:0.3, fi:3.8, benefits:["Vitamin K highest brassica","Sulforaphane concentrated","ALA omega-3 source","Immune Vitamin C","Gut microbiome fuel"]},
-  {id:68, name:"Bok Choy",                 cat:"Vegetable", sub:"Brassicas",  ref:100, cal:13,  p:1.5, c:2.2, f:0.2, fi:1,   benefits:["Calcium non-dairy source","Cruciferous cancer protection","Vitamin C immune","Beta-carotene skin","Very low calorie"]},
-  {id:69, name:"Cherry Tomatoes",          cat:"Vegetable", sub:"Vegetables", ref:100, cal:18,  p:0.9, c:3.9, f:0.2, fi:1.2, benefits:["Lycopene anti-cancer","Vitamin C immune","Very low calorie","Hydrating","Heart protective"]},
-  {id:70, name:"Roma Tomato",              cat:"Vegetable", sub:"Vegetables", ref:100, cal:20,  p:0.9, c:4.3, f:0.2, fi:1.5, benefits:["Lycopene prostate & heart","Vitamin C","Potassium electrolyte","Folate source","Meaty texture for cooking"]},
-  {id:71, name:"Red Capsicum",             cat:"Vegetable", sub:"Vegetables", ref:100, cal:31,  p:1,   c:6,   f:0.3, fi:2.1, benefits:["Highest Vitamin C vegetable","Beta-carotene antioxidant","Lutein eye protection","Collagen synthesis","Anti-inflammatory"]},
-  {id:72, name:"Yellow Capsicum",          cat:"Vegetable", sub:"Vegetables", ref:100, cal:27,  p:1,   c:6.3, f:0.2, fi:0.9, benefits:["Zeaxanthin eye health","Vitamin C source","Low calorie colour","Antioxidant carotenoids","Collagen synthesis"]},
-  {id:73, name:"Green Capsicum",           cat:"Vegetable", sub:"Vegetables", ref:100, cal:20,  p:0.9, c:4.6, f:0.2, fi:1.7, benefits:["Vitamin C source","Chlorophyll detox","Low calorie","Lycopene precursor","Versatile cooking"]},
-  {id:74, name:"Asparagus",               cat:"Vegetable", sub:"Vegetables", ref:100, cal:20,  p:2.2, c:3.9, f:0.1, fi:2.1, benefits:["Natural diuretic lean physique","Folate prenatal health","Prebiotic inulin gut","Glutathione anti-aging","Post-workout meal essential"]},
-  {id:75, name:"Zucchini",                 cat:"Vegetable", sub:"Vegetables", ref:100, cal:17,  p:1.2, c:3.1, f:0.3, fi:1,   benefits:["Extremely low calorie filler","Pasta substitute noodles","Potassium source","Vitamin C & A","Hydrating 95% water"]},
-  {id:76, name:"Eggplant (Aubergine)",     cat:"Vegetable", sub:"Vegetables", ref:100, cal:25,  p:1,   c:6,   f:0.2, fi:3,   benefits:["Nasunin brain antioxidant","Middle Eastern essential","Manganese bone health","Fibre gut health","Baba ganoush base"]},
-  {id:77, name:"Mushrooms (button)",       cat:"Vegetable", sub:"Vegetables", ref:100, cal:22,  p:3.1, c:3.3, f:0.3, fi:1,   benefits:["Vitamin D if UV-exposed","Beta-glucan immunity","B vitamins energy","Umami flavour depth","Low calorie protein boost"]},
-  {id:78, name:"Mushrooms (shiitake)",     cat:"Vegetable", sub:"Vegetables", ref:100, cal:34,  p:2.2, c:6.8, f:0.5, fi:2.5, benefits:["Lentinan immune modulation","Eritadenine cholesterol lowering","Selenium antioxidant","B12 source","Medicinal properties"]},
-  {id:79, name:"Mushrooms (portobello)",   cat:"Vegetable", sub:"Vegetables", ref:100, cal:26,  p:2.1, c:5.1, f:0.3, fi:1.3, benefits:["Meaty texture meat substitute","Vitamin D source","Potassium electrolyte","Selenium antioxidant","B vitamins energy"]},
-  {id:80, name:"Onion (brown)",            cat:"Vegetable", sub:"Aromatics",  ref:100, cal:40,  p:1.1, c:9.3, f:0.1, fi:1.7, benefits:["Quercetin anti-inflammatory","Allicin antimicrobial","Prebiotic fibre","Blood sugar regulation","Every cuisine base"]},
-  {id:81, name:"Red Onion",                cat:"Vegetable", sub:"Aromatics",  ref:100, cal:42,  p:0.9, c:10,  f:0.1, fi:1.7, benefits:["Anthocyanin antioxidant","Quercetin highest onion","Heart health","Anti-inflammatory","Raw salad essential"]},
-  {id:82, name:"Spring Onion (Scallion)",  cat:"Vegetable", sub:"Aromatics",  ref:100, cal:32,  p:1.8, c:7.3, f:0.2, fi:2.6, benefits:["Vitamin K bone health","Vitamin C immune","Allicin antimicrobial","Low calorie garnish","Folate source"]},
-  {id:83, name:"Garlic",                   cat:"Vegetable", sub:"Aromatics",  ref:3,   cal:4,   p:0.2, c:1,   f:0,   fi:0.1, benefits:["Allicin powerful antimicrobial","Blood pressure reduction","Immune boost potent","Cholesterol lowering","Anti-cancer properties"]},
-  {id:84, name:"Ginger (fresh)",           cat:"Vegetable", sub:"Aromatics",  ref:5,   cal:4,   p:0.1, c:0.8, f:0,   fi:0.1, benefits:["Gingerol anti-inflammatory","Post-exercise nausea relief","Digestive enzyme support","Thermogenic metabolism","Pain reduction"]},
-  {id:85, name:"Cucumber",                 cat:"Vegetable", sub:"Vegetables", ref:100, cal:16,  p:0.7, c:3.6, f:0.1, fi:0.5, benefits:["97% water hydration","Extremely low calorie","Vitamin K bone","Silica skin health","Cooling anti-inflammatory"]},
-  {id:86, name:"Carrot",                   cat:"Vegetable", sub:"Vegetables", ref:100, cal:41,  p:0.9, c:10,  f:0.2, fi:2.8, benefits:["Beta-carotene eye health","Vitamin A skin clarity","Falcarinol anti-cancer","Fibre gut health","Immune vitamin A"]},
-  {id:87, name:"Beetroot",                 cat:"Vegetable", sub:"Vegetables", ref:100, cal:43,  p:1.6, c:10,  f:0.2, fi:2.8, benefits:["Nitrates endurance performance","Betalain antioxidant unique","Folate cell repair","Blood pressure reduction","Liver detox"]},
-  {id:88, name:"Baby Peas",                cat:"Vegetable", sub:"Vegetables", ref:100, cal:80,  p:5.4, c:14,  f:0.4, fi:5.1, benefits:["Plant protein source","High fibre gut health","Vitamin C immune","Folate cell health","Lutein eye protection"]},
-  {id:89, name:"Edamame",                  cat:"Vegetable", sub:"Vegetables", ref:100, cal:121, p:11,  c:8.9, f:5.2, fi:5.2, benefits:["Complete plant protein","All 9 amino acids","Isoflavones hormones","Folate rich","Omega-3 ALA source"]},
-  {id:90, name:"Corn (sweet)",             cat:"Vegetable", sub:"Vegetables", ref:100, cal:86,  p:3.2, c:19,  f:1.2, fi:2.7, benefits:["Zeaxanthin eye health","B vitamins thiamine","Ferulic acid antioxidant","Performance fuel","Fibre gut support"]},
-  {id:91, name:"Pumpkin",                  cat:"Vegetable", sub:"Vegetables", ref:100, cal:26,  p:1,   c:6.5, f:0.1, fi:0.5, benefits:["Beta-carotene skin health","Low calorie dense","Vitamin A immune","Middle Eastern popular","Seeds zinc rich"]},
-  {id:92, name:"Green Beans",              cat:"Vegetable", sub:"Vegetables", ref:100, cal:31,  p:1.8, c:7,   f:0.1, fi:2.7, benefits:["Vitamin K bone health","Folate source","Chlorophyll detox","Silicon skin health","Low calorie"]},
-  {id:93, name:"Broccolini",               cat:"Vegetable", sub:"Brassicas",  ref:100, cal:35,  p:3.5, c:4.5, f:0.5, fi:3.4, benefits:["Sulforaphane high","Vitamin C immune","Higher folate than broccoli","Calcium source","Elegant plating"]},
-  {id:94, name:"Snow Peas",                cat:"Vegetable", sub:"Vegetables", ref:100, cal:42,  p:2.8, c:7.5, f:0.2, fi:2.5, benefits:["Vitamin C high","Iron source","Folate","Fibre moderate","Crisp texture stir-fry"]},
-  {id:95, name:"Baby Spinach",             cat:"Vegetable", sub:"Leafy Greens",ref:100,cal:20,  p:2.5, c:2.8, f:0.4, fi:2,   benefits:["Tender leaves easy eating","Iron for blood oxygen","Nitrate performance","Folate","Versatile raw or cooked"]},
-  {id:96, name:"Artichoke (heart)",        cat:"Vegetable", sub:"Vegetables", ref:100, cal:47,  p:3.3, c:10.5,f:0.2, fi:5.4, benefits:["Highest fibre vegetable","Cynarin liver detox","Prebiotic inulin","Folate high","Blood sugar regulation"]},
-  {id:97, name:"Fennel",                   cat:"Vegetable", sub:"Vegetables", ref:100, cal:31,  p:1.2, c:7.3, f:0.2, fi:3.1, benefits:["Anethole digestive soothing","Vitamin C & potassium","Bone health calcium","Phytoestrogen moderate","Gourmet Mediterranean flavour"]},
-  {id:98, name:"Leek",                     cat:"Vegetable", sub:"Aromatics",  ref:100, cal:61,  p:1.5, c:14,  f:0.3, fi:1.8, benefits:["Prebiotic inulin fibre","Folate source","Kaempferol anti-cancer","Vitamin K","Allicin antimicrobial mild"]},
-  // FRUITS — expanded
-  {id:99, name:"Blueberries",              cat:"Fruit", sub:"Berries",       ref:100, cal:57,  p:0.7, c:14,  f:0.3, fi:2.4, benefits:["Anthocyanin brain health","Memory & cognitive boost","Blood pressure reduction","ORAC highest berry","Post-exercise recovery"]},
-  {id:100,name:"Strawberries",             cat:"Fruit", sub:"Berries",       ref:100, cal:32,  p:0.7, c:7.7, f:0.3, fi:2,   benefits:["Vitamin C highest berry","Ellagic acid anti-cancer","Blood sugar regulation","Collagen synthesis","Anti-inflammatory"]},
-  {id:101,name:"Raspberries",              cat:"Fruit", sub:"Berries",       ref:100, cal:52,  p:1.2, c:11.9,f:0.7, fi:6.5, benefits:["Highest fibre berry","Ellagic acid anti-cancer","Ketones metabolism support","Vitamin C immune","Anti-inflammatory anthocyanin"]},
-  {id:102,name:"Blackberries",             cat:"Fruit", sub:"Berries",       ref:100, cal:43,  p:1.4, c:9.6, f:0.5, fi:5.3, benefits:["Anthocyanin antioxidant","Vitamin K highest berry","Manganese energy","High fibre gut","Brain protective"]},
-  {id:103,name:"Açaí (frozen pulp)",       cat:"Fruit", sub:"Berries",       ref:100, cal:70,  p:1.5, c:4,   f:5,   fi:2,   benefits:["Anthocyanin highest ORAC","Omega-3 & omega-6 balance","Heart health","Anti-aging potent","Brain cognitive function"]},
-  {id:104,name:"Goji Berries (dried)",     cat:"Fruit", sub:"Berries",       ref:30,  cal:98,  p:4,   c:20,  f:0.1, fi:3.6, benefits:["Zeaxanthin eye protection","Complete protein berry","Immune polysaccharides","Anti-aging longevity tradition","Iron source"]},
-  {id:105,name:"Banana",                   cat:"Fruit", sub:"Fruits",        ref:120, cal:107, p:1.3, c:27,  f:0.4, fi:3.1, benefits:["Potassium for muscle","Quick workout energy","B6 protein metabolism","Resistant starch gut","Post-workout recovery"]},
-  {id:106,name:"Apple",                    cat:"Fruit", sub:"Fruits",        ref:182, cal:95,  p:0.5, c:25,  f:0.3, fi:4.4, benefits:["Quercetin anti-inflammatory","Pectin fibre prebiotic","Blood sugar management","Gut microbiome support","Vitamin C immune"]},
-  {id:107,name:"Pear",                     cat:"Fruit", sub:"Fruits",        ref:178, cal:101, p:0.6, c:27,  f:0.2, fi:5.5, benefits:["Highest fibre common fruit","Pectin cholesterol lowering","Vitamin C & K","Copper antioxidant","Digestive gentle"]},
-  {id:108,name:"Mango",                    cat:"Fruit", sub:"Fruits",        ref:100, cal:60,  p:0.8, c:15,  f:0.4, fi:1.6, benefits:["Vitamin C immune potent","Mangiferin unique antioxidant","Folate DNA synthesis","Vitamin A vision","Digestive amylase enzymes"]},
-  {id:109,name:"Pineapple",                cat:"Fruit", sub:"Fruits",        ref:100, cal:50,  p:0.5, c:13,  f:0.1, fi:1.4, benefits:["Bromelain anti-inflammatory","Digestive enzyme potent","Vitamin C immune","Manganese energy","Post-workout inflammation reduction"]},
-  {id:110,name:"Papaya",                   cat:"Fruit", sub:"Fruits",        ref:100, cal:43,  p:0.5, c:11,  f:0.3, fi:1.7, benefits:["Papain digestive enzyme","Beta-carotene antioxidant","Vitamin C immune","Folate","Anti-inflammatory lycopene"]},
-  {id:111,name:"Kiwi Fruit",               cat:"Fruit", sub:"Fruits",        ref:75,  cal:46,  p:0.9, c:11,  f:0.4, fi:2.1, benefits:["Vitamin C twice orange","Actinidin digestive enzyme","Vitamin K bone","Serotonin sleep quality","Folate source"]},
-  {id:112,name:"Dates (Medjool)",          cat:"Fruit", sub:"Fruits",        ref:24,  cal:67,  p:0.4, c:18,  f:0.1, fi:1.6, benefits:["Natural pre-workout energy","Potassium electrolyte","Fibre gut health","Gulf tradition Ramadan","Natural sugar no refining"]},
-  {id:113,name:"Pomegranate",              cat:"Fruit", sub:"Fruits",        ref:100, cal:83,  p:1.7, c:19,  f:1.2, fi:4,   benefits:["Punicalagins most potent antioxidant","Anti-inflammatory potent","Blood pressure reduction","Prostate health studies","Middle Eastern superfood"]},
-  {id:114,name:"Lemon",                    cat:"Fruit", sub:"Citrus",        ref:50,  cal:12,  p:0.2, c:3.7, f:0.1, fi:0.3, benefits:["Vitamin C immune boost","Alkalising pH effect","Digestion enzyme trigger","Flavour without calories","Detox citric acid"]},
-  {id:115,name:"Lime",                     cat:"Fruit", sub:"Citrus",        ref:44,  cal:11,  p:0.2, c:3.7, f:0.1, fi:1.1, benefits:["Vitamin C source","Limonene anti-cancer","Iron absorption enhancer","Arabic cuisine essential","Digestive bitter tonic"]},
-  {id:116,name:"Orange",                   cat:"Fruit", sub:"Citrus",        ref:130, cal:62,  p:1.2, c:15.4,f:0.2, fi:3.1, benefits:["Vitamin C very high","Flavonoids heart health","Potassium electrolyte","Folate source","Hesperidin anti-inflammatory"]},
-  {id:117,name:"Grapefruit",               cat:"Fruit", sub:"Citrus",        ref:123, cal:52,  p:1,   c:13,  f:0.2, fi:2,   benefits:["Naringenin fat burning","Vitamin C immune","Blood sugar reduction","Lycopene heart","Low calorie citrus"]},
-  // FATS & OILS
-  {id:118,name:"Avocado",                  cat:"Fat", sub:"Healthy Fats",    ref:75,  cal:120, p:1.5, c:6.4, f:11,  fi:5,   benefits:["Monounsaturated heart fats","Vitamin E antioxidant","Potassium exceeds banana","Folate heart health","Hormone synthesis support"]},
-  {id:119,name:"Olive Oil (EVOO)",         cat:"Fat", sub:"Oils",            ref:15,  cal:119, p:0,   c:0,   f:14,  fi:0,   benefits:["Oleocanthal anti-inflammatory","Polyphenol antioxidants","Oleic acid heart","Mediterranean longevity","Vitamin absorption"]},
-  {id:120,name:"Coconut Oil",              cat:"Fat", sub:"Oils",            ref:14,  cal:117, p:0,   c:0,   f:13.5,fi:0,   benefits:["MCT brain fuel ketones","Lauric acid antimicrobial","High smoke point stable","Thyroid metabolism","Cooking staple"]},
-  {id:121,name:"Sesame Oil",               cat:"Fat", sub:"Oils",            ref:14,  cal:120, p:0,   c:0,   f:14,  fi:0,   benefits:["Sesamin anti-inflammatory","Vitamin E antioxidant","Middle Eastern tahini base","Blood pressure reduction","Sesamol potent"]},
-  {id:122,name:"Almonds",                  cat:"Fat", sub:"Nuts & Seeds",    ref:30,  cal:173, p:6,   c:6,   f:15,  fi:3.5, benefits:["Vitamin E highest nut","Magnesium sleep quality","Monounsaturated fats","Calcium bone health","Blood sugar regulation"]},
-  {id:123,name:"Walnuts",                  cat:"Fat", sub:"Nuts & Seeds",    ref:30,  cal:196, p:4.6, c:4.1, f:19,  fi:2,   benefits:["ALA omega-3 highest nut","Brain polyphenols BDNF","Neuroprotective compounds","Anti-inflammatory potent","Hormone regulation"]},
-  {id:124,name:"Pumpkin Seeds",            cat:"Fat", sub:"Nuts & Seeds",    ref:30,  cal:170, p:8.5, c:4.5, f:14,  fi:1.8, benefits:["Zinc testosterone support","Magnesium sleep quality","Tryptophan serotonin precursor","Prostate health","Iron source"]},
-  {id:125,name:"Chia Seeds",               cat:"Fat", sub:"Nuts & Seeds",    ref:20,  cal:97,  p:3.3, c:8.7, f:6.2, fi:6.9, benefits:["ALA omega-3 highest seed","Hydrogel fibre gut motility","Complete amino acids","Calcium dairy-free","Blood sugar stability"]},
-  {id:126,name:"Tahini",                   cat:"Fat", sub:"Condiments",      ref:15,  cal:89,  p:2.6, c:3.2, f:8,   fi:0.7, benefits:["Middle Eastern essential","Sesamin anti-inflammatory","Calcium bone health","Methionine amino acid","Zinc immunity boost"]},
-  {id:127,name:"Natural Peanut Butter",    cat:"Fat", sub:"Nuts & Seeds",    ref:32,  cal:190, p:8,   c:6,   f:16,  fi:2,   benefits:["Monounsaturated fats","Resveratrol antioxidant","Niacin energy","Arginine circulation","Satiety high-calorie snack"]},
-  {id:128,name:"Dark Chocolate (85%)",     cat:"Fat", sub:"Specialty",       ref:30,  cal:165, p:2.5, c:10,  f:14,  fi:3.5, benefits:["Flavanol heart health proven","Magnesium source","Endorphin mood lift","Iron source","Antioxidant ORAC very high"]},
-  // SPICES
-  {id:129,name:"Turmeric",                 cat:"Spice", sub:"Anti-Inflammatory",ref:3, cal:9,  p:0.3, c:1.9, f:0.3, fi:0.5, benefits:["Curcumin potent anti-inflammatory","Joint pain reduction","Brain BDNF neurogenesis","Liver detox support","Antioxidant ORAC high"]},
-  {id:130,name:"Cumin",                    cat:"Spice", sub:"Middle Eastern",  ref:3,  cal:8,  p:0.4, c:0.9, f:0.5, fi:0.2, benefits:["Iron highest spice source","Thymol digestion aid","Blood sugar regulation","Antimicrobial","Gulf cuisine essential"]},
-  {id:131,name:"Coriander (ground)",       cat:"Spice", sub:"Middle Eastern",  ref:3,  cal:8,  p:0.3, c:1.2, f:0.4, fi:0.8, benefits:["Blood glucose lowering","Digestive antispasmodic","Iron & manganese","Anti-anxiety linalool","Arabic cooking essential"]},
-  {id:132,name:"Cardamom",                 cat:"Spice", sub:"Middle Eastern",  ref:2,  cal:6,  p:0.2, c:1.4, f:0.1, fi:0.6, benefits:["Digestive comfort spice","Anti-nausea properties","Blood pressure reduction","Gulf coffee & tea tradition","Antimicrobial breath"]},
-  {id:133,name:"Cinnamon",                 cat:"Spice", sub:"Anti-Inflammatory",ref:3, cal:8,  p:0.1, c:2.1, f:0.1, fi:1.4, benefits:["Insulin sensitivity improvement","Blood sugar regulation","ORAC high antioxidant","Anti-inflammatory","Breakfast oat essential spice"]},
-  {id:134,name:"Paprika (smoked)",         cat:"Spice", sub:"Cooking",         ref:3,  cal:8,  p:0.4, c:1.5, f:0.4, fi:0.7, benefits:["Capsaicin anti-inflammatory","Vitamin A beta-carotene","Metabolism thermogenic","Iron source","Colour without calories"]},
-  {id:135,name:"Chilli Powder",            cat:"Spice", sub:"Cooking",         ref:3,  cal:8,  p:0.3, c:1.4, f:0.4, fi:0.7, benefits:["Capsaicin thermogenic 4–5%","Vitamin C source","Pain relief compound","Anti-inflammatory","Appetite regulation"]},
-  {id:136,name:"Black Pepper",             cat:"Spice", sub:"Cooking",         ref:3,  cal:8,  p:0.3, c:2,   f:0.1, fi:0.8, benefits:["Piperine curcumin absorb 2000%","Digestive HCl stimulation","Antioxidant chromium","Antimicrobial","Bioavailability enhancer"]},
-  {id:137,name:"Za'atar",                  cat:"Spice", sub:"Middle Eastern",  ref:8,  cal:22, p:0.7, c:3.6, f:0.8, fi:1.4, benefits:["Thymol antibacterial potent","Carvacrol antifungal","Brain memory support","Calcium & iron","Middle Eastern tradition"]},
-  {id:138,name:"Baharat",                  cat:"Spice", sub:"Middle Eastern",  ref:3,  cal:10, p:0.4, c:2,   f:0.4, fi:0.7, benefits:["Multi-spice antioxidant blend","Gulf meat essential spice","Digestive warming complex","Anti-inflammatory","Depth of flavour"]},
-  {id:139,name:"Sumac",                    cat:"Spice", sub:"Middle Eastern",  ref:3,  cal:9,  p:0.3, c:2,   f:0.2, fi:0.5, benefits:["Gallic acid antioxidant","Blood sugar control","Anti-inflammatory","Lemon substitute zero calories","Fattoush essential"]},
-  {id:140,name:"Harissa Paste",            cat:"Spice", sub:"Middle Eastern",  ref:15, cal:20, p:0.5, c:3,   f:0.8, fi:1,   benefits:["Capsaicin thermogenic","North African cuisine base","Anti-inflammatory chilli","Flavour without many calories","Versatile heat"]},
-  {id:141,name:"Garam Masala",             cat:"Spice", sub:"Indian",          ref:3,  cal:10, p:0.4, c:2,   f:0.4, fi:0.6, benefits:["Multi-spice antioxidant","Digestive warming","Indian cuisine foundation","Anti-inflammatory","Metabolism support"]},
-  {id:142,name:"Curry Powder",             cat:"Spice", sub:"Indian",          ref:3,  cal:10, p:0.4, c:1.7, f:0.4, fi:0.7, benefits:["Turmeric curcumin base","Multi-mineral source","Anti-cancer potential","Digestive support","Appetite-enhancing aroma"]},
-  {id:143,name:"Saffron",                  cat:"Spice", sub:"Middle Eastern",  ref:0.2,cal:1,  p:0,   c:0.2, f:0,   fi:0,   benefits:["Crocin antioxidant premium","Anti-depressant clinical studies","Safranal anti-cancer","Memory & cognitive support","Gulf luxury tradition"]},
-  // HERBS
-  {id:144,name:"Fresh Parsley",            cat:"Herb", sub:"Fresh Herbs",     ref:10,  cal:4,  p:0.3, c:0.7, f:0.1, fi:0.3, benefits:["Vitamin K highest herb","Apigenin anti-cancer","Folate cardiovascular","Chlorophyll breath freshening","Kidney cleanse diuretic"]},
-  {id:145,name:"Fresh Coriander",          cat:"Herb", sub:"Fresh Herbs",     ref:10,  cal:2,  p:0.2, c:0.4, f:0.1, fi:0.3, benefits:["Heavy metal chelation detox","Antimicrobial properties","Digestive carminative","Vitamin K source","Arabic & Indian essential"]},
-  {id:146,name:"Fresh Mint",               cat:"Herb", sub:"Fresh Herbs",     ref:10,  cal:7,  p:0.4, c:1.5, f:0.1, fi:1,   benefits:["Menthol IBS relief","Anti-nausea properties","Breath freshening","Arabic tea tradition","Fatigue reduction"]},
-  {id:147,name:"Fresh Basil",              cat:"Herb", sub:"Fresh Herbs",     ref:10,  cal:3,  p:0.3, c:0.5, f:0.1, fi:0.4, benefits:["Eugenol anti-inflammatory","Antibacterial linalool","Vitamin K source","Adaptogenic stress reduction","Gourmet finishing herb"]},
-  // LEGUMES & CONDIMENTS
-  {id:148,name:"Chickpeas (cooked)",       cat:"Carbohydrate", sub:"Legumes", ref:100, cal:164,p:8.9, c:27,  f:2.6, fi:7.6, benefits:["Plant protein source","Resistant starch gut health","Folate high","Iron & zinc","Middle Eastern hummus base"]},
-  {id:149,name:"Lentils (red, cooked)",    cat:"Carbohydrate", sub:"Legumes", ref:100, cal:116,p:9,   c:20,  f:0.4, fi:8,   benefits:["Arabic lentil soup base","Fast-cooking convenience","Iron & folate","Digestive friendly","Plant protein soup staple"]},
-  {id:150,name:"Hummus",                   cat:"Fat", sub:"Condiments",       ref:30,  cal:70, p:2,   c:6,   f:4.5, fi:1.5, benefits:["Tahini & chickpea synergy","Middle Eastern tradition","Prebiotic fibre gut","Monounsaturated healthy fats","Plant protein source"]},
-  {id:151,name:"Apple Cider Vinegar",      cat:"Other", sub:"Condiments",     ref:15,  cal:3,  p:0,   c:0.9, f:0,   fi:0,   benefits:["Acetic acid metabolism boost","Blood sugar reduction","Digestive enzyme trigger","Appetite suppression","Iron absorption enhancer"]},
-  {id:152,name:"Tomato Passata",           cat:"Other", sub:"Sauces",         ref:100, cal:25, p:1.7, c:4.8, f:0.2, fi:1.5, benefits:["Lycopene concentrated cooking","Heart protective","Low calorie sauce base","Vitamin C","Versatile base all cuisines"]},
-  {id:153,name:"Coconut Milk (lite)",      cat:"Other", sub:"Dairy Alt",      ref:100, cal:52, p:0.6, c:2.1, f:4.5, fi:0,   benefits:["MCT medium chain fats","Lauric acid antimicrobial","Dairy-free creamy texture","Indian & Arabic curry essential","Digestive friendly"]},
-  {id:154,name:"Bone Broth",               cat:"Other", sub:"Specialty",      ref:240, cal:38, p:9,   c:0,   f:0.5, fi:0,   benefits:["Collagen peptides joint support","Glycine sleep quality","Gut lining repair & seal","Joint inflammation reduction","Electrolyte mineral rich"]},
-];
+// ─── Master ingredient database (populated from Supabase at runtime) ────────────
+let BASE_ING = [];
 
 // ─── Seed recipes ──────────────────────────────────────────────────────────────
 const SEED_RECIPES = [
@@ -324,13 +154,74 @@ function recipeTotals(recipe) {
   return {cal:Math.round(cal/s),p:Math.round(p/s),c:Math.round(c/s),f:Math.round(f/s),fi:Math.round(fi/s)};
 }
 
+const RECIPE_CATEGORIES = [
+  {id:'high_performance', label:'High Performance', emoji:'🔥', color:'#1C1C1C', photo:'/cat-high-performance.jpg'},
+  {id:'salads',           label:'Salads',           emoji:'🥗', color:'#2D5A27', photo:'/cat-salads.jpg'},
+  {id:'chicken',          label:'Chicken',          emoji:'🍗', color:'#C47C0A', photo:'/cat-chicken.jpg'},
+  {id:'fish',             label:'Fish & Seafood',   emoji:'🐟', color:'#1B6CA8', photo:'/cat-fish.jpg'},
+  {id:'grills',           label:'Grills & Platters',emoji:'🍖', color:'#E8621A', photo:'/cat-grills.jpg'},
+  {id:'breakfast',        label:'Breakfast',        emoji:'🍳', color:'#BA9A3C', photo:'/cat-breakfast.jpg'},
+  {id:'soups',            label:'Soups & Broths',   emoji:'🥣', color:'#8B4513', photo:'/cat-soups.jpg'},
+  {id:'plant',            label:'Plant Based',      emoji:'🌿', color:'#4A7C3F', photo:'/cat-plant.jpg'},
+  {id:'pasta',            label:'Pasta & Rice',     emoji:'🍝', color:'#9E7B3C', photo:'/cat-pasta.jpg'},
+  {id:'dips',             label:'Dips & Sides',     emoji:'🫙', color:'#7F77DD', photo:'/cat-dips.jpg'},
+  {id:'mealprep',         label:'Meal Prep',        emoji:'🍱', color:'#1D9E75', photo:'/cat-mealprep.jpg'},
+  {id:'lowcal',           label:'Low Calorie',      emoji:'⚡', color:'#378ADD', photo:'/cat-lowcal.jpg'},
+];
+
+const SECTION_TAGS = [
+  {label:'Salad',             emoji:'🥗'},
+  {label:'Chicken',           emoji:'🍗'},
+  {label:'Fish & Seafood',    emoji:'🐟'},
+  {label:'Grills & Platters', emoji:'🍖'},
+  {label:'Dips & Sides',      emoji:'🫙'},
+  {label:'Plant Based',       emoji:'🌿'},
+  {label:'Pasta & Rice',      emoji:'🍝'},
+  {label:'Bone Broth',        emoji:'🥣'},
+  {label:'High Performance',  emoji:'⚡'},
+  {label:'Fitness',           emoji:'🔥'},
+  {label:'Middle Eastern',    emoji:'🌍'},
+  {label:'Indian',            emoji:'🇮🇳'},
+  {label:'Asian',             emoji:'🇯🇵'},
+  {label:'Longevity',         emoji:'🫐'},
+  {label:'Meal Prep',         emoji:'🍱'},
+];
+
+function getRecipesForCategory(cat, recipes) {
+  switch(cat.id) {
+    case 'high_performance': return recipes.filter(r=>parseArr(r.tags).includes('High Performance'));
+    case 'salads':           return recipes.filter(r=>parseArr(r.tags).includes('Salad')||/salad/i.test(r.name));
+    case 'chicken':          return recipes.filter(r=>parseArr(r.ings).some(i=>i.id===1||i.id===2)||parseArr(r.tags).includes('Chicken'));
+    case 'fish':             return recipes.filter(r=>parseArr(r.ings).some(i=>[14,15,16,17,18,19].includes(i.id))||parseArr(r.tags).some(t=>['Omega-3','Fish','Gulf Fish','Seafood'].includes(t)));
+    case 'grills':           return recipes.filter(r=>parseArr(r.tags).some(t=>t==='Fitness'||t==='High Protein'||t==='Grills & Platters')||/grill|platter|bowl/i.test(r.name));
+    case 'breakfast':        return recipes.filter(r=>r.cat==='Breakfast'||parseArr(r.tags).includes('Breakfast'));
+    case 'soups':            return recipes.filter(r=>parseArr(r.tags).some(t=>t==='Bone Broth'||t==='Soup')||/soup|broth/i.test(r.name));
+    case 'plant':            return recipes.filter(r=>parseArr(r.tags).some(t=>['Plant Based','Vegan','Vegetarian'].includes(t)));
+    case 'pasta':            return recipes.filter(r=>parseArr(r.ings).some(i=>i.id>=31&&i.id<=45)||/pasta|rice|noodle/i.test(r.name));
+    case 'dips':             return recipes.filter(r=>/dip|hummus|sauce|salsa/i.test(r.name));
+    case 'mealprep':         return recipes.filter(r=>parseArr(r.tags).includes('Meal Prep'));
+    case 'lowcal':           return recipes.filter(r=>recipeTotals(r).cal<350);
+    default:                 return recipes;
+  }
+}
+
 function generateWeeklyPlan(client, recipes) {
   const subject={...client,age:String(client.age),weight:String(client.weight),height:String(client.height)};
   const m=calcMacros(subject);
   if(!m) return null;
+  const valid=recipes.filter(r=>{
+    const tot=recipeTotals(r);
+    if(tot.cal===0) return false;
+    if(tot.cal>900) return false;
+    if(tot.p>120) return false;
+    if(tot.cal<50&&!parseArr(r.tags).includes('Bone Broth')) return false;
+    if(tot.c>200) return false;
+    if(parseArr(r.tags).includes('Dips & Sides')) return false;
+    return true;
+  });
   const bySlot={};
   MEAL_SLOTS.forEach(slot=>{
-    const all=recipes.filter(r=>r.cat===slot.cat);
+    const all=valid.filter(r=>r.cat===slot.cat);
     const goalFirst=all.filter(r=>parseArr(r.goal).includes(client.goal));
     const rest=all.filter(r=>!parseArr(r.goal).includes(client.goal));
     bySlot[slot.id]=[...goalFirst,...rest];
@@ -405,7 +296,10 @@ function RecipeCard({recipe,onSelect,selected}) {
         </div>
         <div style={{fontSize:13,fontWeight:500,lineHeight:1.3,marginBottom:4}}>{recipe.name}</div>
         <div style={{fontSize:11,color:"var(--color-text-secondary)",lineHeight:1.5,marginBottom:10}}>{(recipe.desc||recipe.description||'').slice(0,72)}…</div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>{parseArr(recipe.tags).slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
+          {parseArr(recipe.tags).includes('High Performance')&&<span style={{fontSize:9,padding:"2px 7px",borderRadius:20,background:'#2D2D2D',color:'#fff',fontWeight:600,letterSpacing:'0.03em'}}>⚡ High Performance</span>}
+          {parseArr(recipe.tags).filter(t=>t!=='High Performance').slice(0,2).map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}
+        </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",paddingTop:10,borderTop:tk.bd}}>
           {[["kcal",m.cal,tk.teal],["P",m.p+"g",tk.blue],["C",m.c+"g",tk.green],["F",m.f+"g",tk.coral]].map(([l,v,c])=>(
             <div key={l} style={{textAlign:"center"}}><div style={{fontSize:13,fontWeight:500,color:c}}>{v}</div><div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:2}}>{l}</div></div>
@@ -417,8 +311,50 @@ function RecipeCard({recipe,onSelect,selected}) {
 }
 
 // ─── Recipe detail ──────────────────────────────────────────────────────────────
-function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
+function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}) {
   if(!recipe) return null;
+
+  // ── all hooks first ──────────────────────────────────────────────────────────
+  const [localPhoto,setLocalPhoto]           = useState(recipe.photo_url||null);
+  const [photoUploading,setPhotoUploading]   = useState(false);
+  const [photoErr,setPhotoErr]               = useState(null);
+  const [photoDragOver,setPhotoDragOver]     = useState(false);
+  const [multiplier,setMultiplier]           = useState(1);
+  const [customQty,setCustomQty]             = useState('');
+  const photoInputRef = useRef(null);
+
+  const [editMode,setEditMode]               = useState(false);
+  const [draft,setDraft]                     = useState(null);
+  const [editIngs,setEditIngs]               = useState([]);
+  const [editMethod,setEditMethod]           = useState([]);
+  const [editTagInput,setEditTagInput]       = useState('');
+  const [editIngSearch,setEditIngSearch]     = useState('');
+  const [editIngEditIdx,setEditIngEditIdx]   = useState(null);
+  const [editIngQuery,setEditIngQuery]       = useState('');
+  const [editSaving,setEditSaving]           = useState(false);
+  const [editSaved,setEditSaved]             = useState(false);
+  const [editErr,setEditErr]                 = useState('');
+
+  const editTotals = useMemo(()=>{
+    let cal=0,p=0,c=0,f=0;
+    editIngs.forEach(ri=>{const mx=ingMacros(ri);cal+=mx.cal;p+=mx.p;c+=mx.c;f+=mx.f;});
+    const s=+(draft?.serves)||1;
+    return {cal:Math.round(cal/s),p:Math.round(p/s),c:Math.round(c/s),f:Math.round(f/s)};
+  },[editIngs,draft?.serves]);
+
+  const editIngFiltered = useMemo(()=>{
+    if(!editIngSearch||editIngSearch.length<2) return [];
+    const q=editIngSearch.toLowerCase();
+    return allIngredients.filter(i=>i.name.toLowerCase().includes(q)||i.sub.toLowerCase().includes(q)).slice(0,10);
+  },[editIngSearch,allIngredients]);
+
+  const editIngQueryFiltered = useMemo(()=>{
+    if(!editIngQuery||editIngQuery.length<1) return [];
+    const q=editIngQuery.toLowerCase();
+    return allIngredients.filter(i=>i.name.toLowerCase().includes(q)).slice(0,10);
+  },[editIngQuery,allIngredients]);
+
+  // ── view-mode computed ───────────────────────────────────────────────────────
   const ings   = parseArr(recipe.ings);
   const tags   = parseArr(recipe.tags);
   const method = parseArr(recipe.method);
@@ -426,19 +362,69 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
   const safeRecipe = {...recipe, ings, tags, method, goal};
   const m=recipeTotals(safeRecipe);
   const resolved=ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
-
-  const [localPhoto,setLocalPhoto]       = useState(recipe.photo_url||null);
-  const [photoUploading,setPhotoUploading] = useState(false);
-  const [photoErr,setPhotoErr]           = useState(null);
-  const [photoDragOver,setPhotoDragOver] = useState(false);
-  const [multiplier,setMultiplier]       = useState(1);
-  const [customQty,setCustomQty]         = useState('');
-  const photoInputRef = useRef(null);
   const hasPhoto = !!localPhoto;
+
+  // ── edit helpers ─────────────────────────────────────────────────────────────
+  function startEdit() {
+    setDraft({
+      name:  recipe.name||'',
+      desc:  recipe.desc||recipe.description||'',
+      cat:   recipe.cat||'Lunch',
+      emoji: recipe.emoji||'🍽️',
+      prep:  recipe.prep??0,
+      cook:  recipe.cook??0,
+      serves:recipe.serves??1,
+      goal:  [...parseArr(recipe.goal)],
+      tags:  [...parseArr(recipe.tags)],
+    });
+    setEditIngs([...parseArr(recipe.ings)]);
+    const m0=parseArr(recipe.method);
+    setEditMethod(m0.length?[...m0]:['']);
+    setEditMode(true);
+    setEditErr('');setEditSaved(false);setEditIngSearch('');setEditTagInput('');
+  }
+  function isDirty() {
+    if(!draft) return false;
+    const ob=JSON.stringify({name:recipe.name||'',desc:recipe.desc||recipe.description||'',cat:recipe.cat||'',emoji:recipe.emoji||'',prep:recipe.prep??0,cook:recipe.cook??0,serves:recipe.serves??1});
+    const cb=JSON.stringify({name:draft.name,desc:draft.desc,cat:draft.cat,emoji:draft.emoji,prep:draft.prep,cook:draft.cook,serves:draft.serves});
+    if(ob!==cb) return true;
+    if(JSON.stringify(parseArr(recipe.ings))!==JSON.stringify(editIngs)) return true;
+    if(JSON.stringify(parseArr(recipe.method))!==JSON.stringify(editMethod.filter(s=>s.trim()))) return true;
+    if(JSON.stringify([...parseArr(recipe.goal)].sort())!==JSON.stringify([...(draft.goal||[])].sort())) return true;
+    if(JSON.stringify([...parseArr(recipe.tags)].sort())!==JSON.stringify([...(draft.tags||[])].sort())) return true;
+    return false;
+  }
+  function cancelEdit() {
+    if(isDirty()&&!window.confirm('Discard unsaved changes?')) return;
+    setEditMode(false);setDraft(null);setEditIngs([]);setEditMethod([]);
+    setEditIngSearch('');setEditIngEditIdx(null);setEditIngQuery('');setEditTagInput('');setEditErr('');
+  }
+  async function saveEdit() {
+    if(!draft.name.trim()){setEditErr('Recipe name is required.');return;}
+    if(editIngs.length===0){setEditErr('At least one ingredient is required.');return;}
+    setEditErr('');setEditSaving(true);
+    const updates={
+      name:draft.name.trim(),desc:draft.desc,cat:draft.cat,emoji:draft.emoji,
+      prep:+draft.prep||0,cook:+draft.cook||0,serves:+draft.serves||1,
+      goal:draft.goal,ings:editIngs,method:editMethod.filter(s=>s.trim()),tags:draft.tags,
+    };
+    try {
+      const {error}=await supabase.from('recipes').update(updates).eq('id',recipe.id);
+      if(error) throw error;
+      if(onUpdate) onUpdate({...recipe,...updates});
+      setEditSaved(true);
+      setTimeout(()=>{setEditSaved(false);setEditMode(false);},2000);
+    } catch(e){setEditErr('Save failed: '+(e.message||'unknown'));}
+    finally{setEditSaving(false);}
+  }
 
   function fmtAmt(g) {
     const t=Math.round(g);
     return t>=1000?(t/1000).toFixed(t%1000===0?0:1)+'kg':t+'g';
+  }
+  async function quickSave(patch) {
+    if(onUpdate) onUpdate({...recipe,...patch});
+    try { await supabase.from('recipes').update(patch).eq('id',recipe.id); } catch(e){}
   }
 
   async function handlePhotoFile(file) {
@@ -465,6 +451,221 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
     }
   }
 
+  // ── shared style shortcuts ────────────────────────────────────────────────────
+  const eInp={width:"100%",boxSizing:"border-box",padding:"9px 12px",border:"1px solid #cccccc",borderRadius:tk.r,fontSize:13,background:"var(--color-background-primary)",color:"var(--color-text-primary)",outline:"none"};
+  const eLbl={fontSize:12,color:"#4A4A4A",display:"block",marginBottom:5,fontWeight:500};
+
+  // ── EDIT MODE RENDER ──────────────────────────────────────────────────────────
+  if(editMode && draft) return (
+    <div style={{marginTop:16,...crd,borderRadius:tk.rXl,padding:0,overflow:"hidden"}}>
+      {/* toolbar */}
+      <div style={{padding:"12px 20px",display:"flex",gap:8,alignItems:"center",borderBottom:tk.bd,background:"var(--color-background-secondary)"}}>
+        <button onClick={cancelEdit} style={{padding:"6px 14px",borderRadius:40,fontSize:13,fontWeight:500,cursor:"pointer",background:"white",color:tk.gray,border:`1px solid ${tk.gray}`,whiteSpace:"nowrap"}}>← Back</button>
+        <span style={{fontSize:14,fontWeight:600,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>✏️ Editing: {recipe.name}</span>
+      </div>
+
+      {/* live macro bar */}
+      <div style={{padding:"12px 20px",background:"#F7F4EF",borderBottom:tk.bd}}>
+        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:editTotals.cal>0?6:0}}>
+          <span style={{fontSize:11,fontWeight:600,color:"#555",marginRight:2}}>Live total:</span>
+          <span style={{fontSize:14,fontWeight:700,color:tk.teal}}>{editTotals.cal} kcal</span>
+          <span style={{color:"#ccc"}}>·</span>
+          <span style={{fontSize:13,fontWeight:600,color:tk.blue}}>{editTotals.p}g P</span>
+          <span style={{color:"#ccc"}}>·</span>
+          <span style={{fontSize:13,fontWeight:600,color:tk.amber}}>{editTotals.c}g C</span>
+          <span style={{color:"#ccc"}}>·</span>
+          <span style={{fontSize:13,fontWeight:600,color:tk.coral}}>{editTotals.f}g F</span>
+        </div>
+        {editTotals.cal>0&&(
+          <div style={{height:5,borderRadius:3,background:"#E8E4DC",overflow:"hidden",display:"flex"}}>
+            {[[editTotals.p*4,tk.blue],[editTotals.c*4,tk.amber],[editTotals.f*9,tk.coral]].map(([kcal,col],idx)=>(
+              <div key={idx} style={{width:Math.min(100,Math.round(kcal/editTotals.cal*100))+'%',height:'100%',background:col,transition:'width 0.2s'}}/>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{padding:20}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
+
+          {/* ── LEFT: basic info + goals + tags + method ─────────────────── */}
+          <div>
+            <div style={{marginBottom:12}}>
+              <label style={eLbl}>Recipe name *</label>
+              <input value={draft.name} onChange={e=>setDraft(d=>({...d,name:e.target.value}))} style={eInp} placeholder="Recipe name…"/>
+            </div>
+            <div style={{marginBottom:12}}>
+              <label style={eLbl}>Description</label>
+              <textarea value={draft.desc} onChange={e=>setDraft(d=>({...d,desc:e.target.value}))} rows={3} style={{...eInp,resize:"vertical"}} placeholder="Short description…"/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+              <div>
+                <label style={eLbl}>Category</label>
+                <select value={draft.cat} onChange={e=>setDraft(d=>({...d,cat:e.target.value}))} style={eInp}>
+                  {["Breakfast","Lunch","Dinner","Snack"].map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={eLbl}>Emoji</label>
+                <input value={draft.emoji} onChange={e=>setDraft(d=>({...d,emoji:e.target.value}))} style={eInp} maxLength={4} placeholder="🍽️"/>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+              {[["Prep (min)","prep"],["Cook (min)","cook"],["Serves","serves"]].map(([l,k])=>(
+                <div key={k}><label style={eLbl}>{l}</label><input type="number" min={0} value={draft[k]} onChange={e=>setDraft(d=>({...d,[k]:e.target.value}))} style={eInp}/></div>
+              ))}
+            </div>
+            <div style={{marginBottom:12}}>
+              <label style={eLbl}>Goals</label>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                {GOALS.map(g=>(
+                  <label key={g.id} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",fontSize:13,color:"#4A4A4A"}}>
+                    <input type="checkbox" checked={(draft.goal||[]).includes(g.id)}
+                      onChange={e=>setDraft(d=>({...d,goal:e.target.checked?[...(d.goal||[]),g.id]:(d.goal||[]).filter(x=>x!==g.id)}))}/>
+                    {g.icon} {g.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* tags */}
+            <div style={{marginBottom:16}}>
+              <label style={eLbl}>Tags</label>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8,minHeight:28}}>
+                {(draft.tags||[]).map((tag,i)=>(
+                  <span key={i} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"3px 10px",borderRadius:20,background:tk.tealSurf,color:tk.tealText,fontSize:12,fontWeight:500}}>
+                    {tag}
+                    <button onClick={()=>setDraft(d=>({...d,tags:d.tags.filter((_,j)=>j!==i)}))}
+                      style={{background:"none",border:"none",cursor:"pointer",color:tk.teal,fontSize:14,lineHeight:1,padding:"0 1px",marginLeft:2}}>×</button>
+                  </span>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <input value={editTagInput} onChange={e=>setEditTagInput(e.target.value)}
+                  onKeyDown={e=>{if((e.key==='Enter'||e.key===',')&&editTagInput.trim()){e.preventDefault();const t=editTagInput.trim().replace(/,$/,'');if(t&&!(draft.tags||[]).includes(t)){setDraft(d=>({...d,tags:[...(d.tags||[]),t]}));setEditTagInput('');}}}}
+                  placeholder="New tag… (Enter to add)" style={{...eInp,flex:1}}/>
+                <button onClick={()=>{const t=editTagInput.trim();if(t&&!(draft.tags||[]).includes(t)){setDraft(d=>({...d,tags:[...(d.tags||[]),t]}));setEditTagInput('');}}}
+                  style={{padding:"0 14px",borderRadius:tk.r,border:`1px solid ${tk.teal}`,color:tk.teal,background:"transparent",cursor:"pointer",fontSize:18,fontWeight:600,flexShrink:0}}>+</button>
+              </div>
+            </div>
+
+            {/* method steps */}
+            <div>
+              <label style={eLbl}>Method steps</label>
+              {editMethod.map((step,i)=>(
+                <div key={i} style={{display:"flex",gap:6,marginBottom:8,alignItems:"flex-start"}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:2,paddingTop:11}}>
+                    <button disabled={i===0} onClick={()=>setEditMethod(arr=>{const a=[...arr];[a[i-1],a[i]]=[a[i],a[i-1]];return a;})}
+                      style={{width:20,height:20,border:"1px solid #ccc",borderRadius:4,cursor:i===0?"not-allowed":"pointer",fontSize:10,background:"white",color:i===0?"#ccc":"#444",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>↑</button>
+                    <button disabled={i===editMethod.length-1} onClick={()=>setEditMethod(arr=>{const a=[...arr];[a[i+1],a[i]]=[a[i],a[i+1]];return a;})}
+                      style={{width:20,height:20,border:"1px solid #ccc",borderRadius:4,cursor:i===editMethod.length-1?"not-allowed":"pointer",fontSize:10,background:"white",color:i===editMethod.length-1?"#ccc":"#444",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>↓</button>
+                  </div>
+                  <span style={{width:22,height:22,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:600,flexShrink:0,marginTop:11}}>{i+1}</span>
+                  <textarea value={step} onChange={e=>setEditMethod(arr=>arr.map((s,j)=>j===i?e.target.value:s))}
+                    placeholder={`Step ${i+1}…`} rows={2} style={{...eInp,flex:1,resize:"vertical"}}/>
+                  {editMethod.length>1&&<button onClick={()=>setEditMethod(arr=>arr.filter((_,j)=>j!==i))}
+                    style={{padding:"0 8px",height:44,cursor:"pointer",fontSize:18,color:tk.red,border:"none",background:"transparent",marginTop:2,flexShrink:0}}>×</button>}
+                </div>
+              ))}
+              <button onClick={()=>setEditMethod(arr=>[...arr,''])}
+                style={{fontSize:12,padding:"7px 14px",cursor:"pointer",color:tk.teal,marginTop:4,border:`1px solid ${tk.teal}`,borderRadius:tk.r,background:"transparent",fontWeight:500}}>+ Add step</button>
+            </div>
+          </div>
+
+          {/* ── RIGHT: ingredient editor ─────────────────────────────────── */}
+          <div>
+            <label style={eLbl}>Add ingredient</label>
+            <div style={{position:"relative",marginBottom:12}}>
+              <input value={editIngSearch} onChange={e=>setEditIngSearch(e.target.value)}
+                placeholder="Search ingredients to add…" style={eInp}/>
+              {editIngFiltered.length>0&&(
+                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"var(--color-background-primary)",border:"1px solid #ccc",borderRadius:tk.r,zIndex:10,maxHeight:220,overflowY:"auto",marginTop:4,boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}}>
+                  {editIngFiltered.map(ing=>(
+                    <div key={ing.id}
+                      onMouseDown={()=>{if(!editIngs.find(x=>x.id===ing.id)) setEditIngs(p=>[...p,{id:ing.id,amt:ing.ref||100}]);setEditIngSearch('');}}
+                      style={{padding:"9px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",fontSize:12,alignItems:"center"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
+                      onMouseLeave={e=>e.currentTarget.style.background=""}>
+                      <div><span style={{fontWeight:500}}>{ing.name}</span><span style={{marginLeft:6}}><CatBadge cat={ing.cat}/></span></div>
+                      <span style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{ing.cal} kcal/{ing.ref}g</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {editIngs.length>0?(
+              <div style={{border:"1px solid #ccc",borderRadius:tk.rLg,overflow:"visible",marginBottom:8}}>
+                <div style={{padding:"7px 14px",background:"var(--color-background-secondary)",fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.08em",borderRadius:`${tk.rLg} ${tk.rLg} 0 0`}}>
+                  Ingredient · click name to change &nbsp;|&nbsp; Amount (g) &nbsp;|&nbsp; ×
+                </div>
+                {editIngs.map((ri,i)=>{
+                  const ing=allIngredients.find(x=>x.id===ri.id)||BASE_ING.find(x=>x.id===ri.id);
+                  if(!ing) return null;
+                  const mx=ingMacros(ri);
+                  const inSearch=editIngEditIdx===i;
+                  return (
+                    <div key={i} style={{padding:"8px 14px",borderTop:"1px solid #ccc",display:"grid",gridTemplateColumns:"1fr 80px 32px",alignItems:"center",gap:8,position:"relative"}}>
+                      {inSearch?(
+                        <div style={{position:"relative"}}>
+                          <input autoFocus value={editIngQuery}
+                            onChange={e=>setEditIngQuery(e.target.value)}
+                            onBlur={()=>{setEditIngEditIdx(null);setEditIngQuery('');}}
+                            placeholder="Search ingredient…" style={{...eInp,padding:"5px 8px",fontSize:12}}/>
+                          {editIngQueryFiltered.length>0&&(
+                            <div style={{position:"absolute",top:"100%",left:0,right:0,background:"var(--color-background-primary)",border:"1px solid #ccc",borderRadius:tk.r,zIndex:30,maxHeight:180,overflowY:"auto",marginTop:2,boxShadow:"0 4px 12px rgba(0,0,0,0.15)"}}>
+                              {editIngQueryFiltered.map(ni=>(
+                                <div key={ni.id}
+                                  onMouseDown={()=>{setEditIngs(p=>p.map((x,j)=>j===i?{...x,id:ni.id}:x));setEditIngEditIdx(null);setEditIngQuery('');}}
+                                  style={{padding:"8px 12px",borderBottom:tk.bd,cursor:"pointer",fontSize:12}}
+                                  onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
+                                  onMouseLeave={e=>e.currentTarget.style.background=""}>
+                                  {ni.name}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ):(
+                        <div onClick={()=>{setEditIngEditIdx(i);setEditIngQuery('');}} style={{cursor:"pointer",display:"flex",flexDirection:"column",gap:1}}>
+                          <span style={{fontSize:12,fontWeight:500,color:tk.teal,textDecoration:"underline dotted"}}>{ing.name}</span>
+                          <span style={{fontSize:10,color:"var(--color-text-secondary)"}}>{Math.round(mx.cal)} kcal · <span style={{color:tk.blue}}>{Math.round(mx.p)}P</span> · <span style={{color:tk.amber}}>{Math.round(mx.c)}C</span> · <span style={{color:tk.coral}}>{Math.round(mx.f)}F</span></span>
+                        </div>
+                      )}
+                      <input type="number" min={1} max={2000} value={ri.amt}
+                        onChange={e=>setEditIngs(p=>p.map((x,j)=>j===i?{...x,amt:+e.target.value||0}:x))}
+                        style={{...eInp,padding:"6px 8px",textAlign:"center"}}/>
+                      <button onClick={()=>setEditIngs(p=>p.filter((_,j)=>j!==i))}
+                        style={{height:32,cursor:"pointer",fontSize:18,color:tk.red,border:"none",background:"transparent",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+                    </div>
+                  );
+                })}
+              </div>
+            ):(
+              <div style={{border:"2px dashed #ccc",borderRadius:tk.rLg,padding:"24px",textAlign:"center",color:"var(--color-text-tertiary)",fontSize:13,marginBottom:12}}>
+                Search and add ingredients above
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* save / cancel */}
+        {editErr&&<div style={{marginTop:16,padding:"10px 14px",background:"#FEF0F0",borderRadius:tk.r,fontSize:13,color:tk.red,fontWeight:500}}>{editErr}</div>}
+        <div style={{display:"flex",gap:10,marginTop:20}}>
+          <button onClick={saveEdit} disabled={editSaving||editSaved}
+            style={{flex:1,height:48,background:editSaved?"#4A7C3F":"#E8621A",color:"white",border:"none",borderRadius:tk.rLg,cursor:editSaving||editSaved?"default":"pointer",fontSize:15,fontWeight:600,transition:"background 0.2s"}}>
+            {editSaving?"Saving…":editSaved?"Recipe saved ✓":"Save changes"}
+          </button>
+          <button onClick={cancelEdit}
+            style={{padding:"0 24px",height:48,border:"1px solid #ccc",borderRadius:tk.rLg,cursor:"pointer",fontSize:14,background:"white",color:"#4A4A4A",fontWeight:500}}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── VIEW MODE ─────────────────────────────────────────────────────────────────
   function handlePrint() {
     const benefitsHtml = resolved.map(ing=>
       `<div style="margin-bottom:12px;page-break-inside:avoid">
@@ -559,8 +760,9 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
             <h2 style={{fontSize:18,fontWeight:500,margin:hasPhoto?"0 0 2px":"8px 0 2px"}}>{recipe.name}</h2>
             <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{recipe.cat} · {recipe.prep} min prep · {recipe.cook} min cook · serves {recipe.serves}</div>
           </div>
-          <div style={{display:"flex",gap:8}}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <button onClick={handlePrint} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,background:tk.tealSurf,color:tk.tealText,border:`1px solid rgba(232,98,26,0.22)`}}>🖨 Print</button>
+            <button onClick={startEdit} style={{padding:"6px 14px",borderRadius:40,cursor:"pointer",fontSize:12,background:"white",color:"#2D5A27",border:"1px solid #2D5A27",fontWeight:500}}>✏️ Edit recipe</button>
             {onDelete&&<button onClick={()=>onDelete(recipe.id)} style={{padding:"6px 12px",borderRadius:tk.r,cursor:"pointer",fontSize:12,color:tk.red}}>Delete</button>}
           </div>
         </div>
@@ -587,6 +789,42 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate}) {
               onChange={e=>{setCustomQty(e.target.value);const v=+e.target.value;if(v>=1)setMultiplier(v);}}
               placeholder="Custom qty"
               style={{width:96,padding:"5px 10px",borderRadius:20,border:"1px solid #C0DD97",fontSize:12,outline:"none",background:"var(--color-background-primary)"}}/>
+          </div>
+        </div>
+
+        {/* ── Category quick-edit ── */}
+        <div style={{marginBottom:20,padding:"14px 16px",background:"var(--color-background-secondary)",borderRadius:tk.r}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#2D5A27",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>Meal category</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+            {["Breakfast","Lunch","Dinner","Snack"].map(c=>{
+              const active=recipe.cat===c;
+              return <button key={c} onClick={()=>quickSave({cat:c})}
+                style={{padding:"7px 16px",borderRadius:20,fontSize:12,cursor:"pointer",border:`1px solid ${active?"#2D5A27":"#ccc"}`,fontWeight:active?600:400,background:active?"#2D5A27":"transparent",color:active?"white":"var(--color-text-secondary)",transition:"all 0.1s"}}>{c}</button>;
+            })}
+          </div>
+          <div style={{fontSize:11,fontWeight:700,color:"#2D5A27",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Section tags</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+            {SECTION_TAGS.map(({label,emoji})=>{
+              const active=parseArr(recipe.tags).includes(label);
+              return <button key={label} onClick={()=>{
+                const cur=parseArr(recipe.tags);
+                quickSave({tags:active?cur.filter(t=>t!==label):[...cur,label]});
+              }} style={{padding:"5px 11px",borderRadius:20,fontSize:12,cursor:"pointer",border:`1px solid ${active?"#2D5A27":"#ccc"}`,background:active?"#EAF3DE":"transparent",color:active?"#2D5A27":"var(--color-text-secondary)",fontWeight:active?500:400,transition:"all 0.1s"}}>
+                {emoji} {label}
+              </button>;
+            })}
+          </div>
+          <div style={{fontSize:11,fontWeight:700,color:"#2D5A27",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Goals</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {GOALS.map(g=>{
+              const active=parseArr(recipe.goal).includes(g.id);
+              return <button key={g.id} onClick={()=>{
+                const cur=parseArr(recipe.goal);
+                quickSave({goal:active?cur.filter(x=>x!==g.id):[...cur,g.id]});
+              }} style={{padding:"5px 11px",borderRadius:20,fontSize:12,cursor:"pointer",border:`1px solid ${active?"#E8621A":"#ccc"}`,background:active?"#FDEEE6":"transparent",color:active?"#E8621A":"var(--color-text-secondary)",fontWeight:active?500:400,transition:"all 0.1s"}}>
+                {g.icon} {g.label}
+              </button>;
+            })}
           </div>
         </div>
 
@@ -881,14 +1119,16 @@ export default function BurntCaloriesApp() {
     try { const s=window.storage; return SEED_RECIPES; } catch(e){ return SEED_RECIPES; }
   });
   const [selRecipe,setSelRecipe] = useState(null);
+  const [selCategory,setSelCategory] = useState(null);
   const [showUploader,setShowUploader] = useState(false);
   const [recCat,setRecCat]    = useState("All");
   const [recGoal,setRecGoal]  = useState("all");
   const [recSearch,setRecSearch] = useState("");
+  const [recTag,setRecTag]    = useState("");
   const [ingSearch,setIngSearch] = useState("");
   const [ingCat,setIngCat]    = useState("All");
   const [ingSub,setIngSub]    = useState("All");
-  const [ingredients,setIngredients] = useState(BASE_ING);
+  const [ingredients,setIngredients] = useState([]);
   const [builderIngs,setBuilderIngs] = useState([]);
   const [builderName,setBuilderName] = useState("");
   const [builderSearch,setBuilderSearch] = useState("");
@@ -909,6 +1149,12 @@ export default function BurntCaloriesApp() {
   const [planClientId,setPlanClientId] = useState(null);
   const [currentPlan,setCurrentPlan] = useState(null);
   const [planView,setPlanView] = useState('plan');
+  const [planSwapTarget,setPlanSwapTarget] = useState(null);
+  const [planSwapSearch,setPlanSwapSearch] = useState('');
+  const [showCatManager,setShowCatManager] = useState(false);
+  const [catSearch,setCatSearch] = useState('');
+  const [catDrafts,setCatDrafts] = useState({});
+  const [catSaving,setCatSaving] = useState(false);
   const [isMobile,setIsMobile] = useState(()=>typeof window!=='undefined'?window.innerWidth<768:false);
   const [navOpen,setNavOpen] = useState(false);
 
@@ -931,7 +1177,11 @@ export default function BurntCaloriesApp() {
           supabase.from('clients').select('*').order('id'),
           supabase.from('profiles').select('*').order('created_at',{ascending:false}).limit(1),
         ]);
-        if(!ie && ings?.length) setIngredients(ings);
+        if(!ie && ings?.length) {
+          const normalized=ings.map(i=>({...i,benefits:Array.isArray(i.benefits)?i.benefits:[]}));
+          BASE_ING=normalized;
+          setIngredients(normalized);
+        }
         if(!re && recs?.length) setRecipes(recs.map(normalizeRecipe));
         if(!ce && cls?.length) setClients(cls.map(c=>({...c,activityLevel:c.activity_level})));
         if(!pe && profs?.length) {
@@ -1022,12 +1272,11 @@ export default function BurntCaloriesApp() {
     try { await supabase.from('clients').delete().eq('id',id); } catch(e){}
   }
 
-  const filteredRecipes = useMemo(()=>recipes.filter(r=>{
-    const mc=recCat==="All"||r.cat===recCat;
-    const mg=recGoal==="all"||parseArr(r.goal).includes(recGoal);
-    const mt=!recSearch||r.name.toLowerCase().includes(recSearch.toLowerCase());
-    return mc&&mg&&mt;
-  }),[recipes,recCat,recGoal,recSearch]);
+  const filteredRecipes = useMemo(()=>{
+    let base=selCategory?getRecipesForCategory(selCategory,recipes):recipes;
+    if(recSearch){const q=recSearch.toLowerCase();base=base.filter(r=>r.name.toLowerCase().includes(q)||(r.desc||r.description||'').toLowerCase().includes(q));}
+    return base;
+  },[recipes,selCategory,recSearch]);
 
   const ingCats = useMemo(()=>["All",...new Set(ingredients.map(i=>i.cat))],[ingredients]);
   const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(ingredients.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingCat,ingredients]);
@@ -1296,11 +1545,24 @@ export default function BurntCaloriesApp() {
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(<>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
-          <Hdr title="Recipe library" sub={`${recipes.length} recipes · ${recipes.filter(r=>r.custom).length} custom · full macro breakdown · Burnt Calories`}/>
+          <Hdr
+            title={selCategory?selCategory.label:"Recipe library"}
+            sub={selCategory?`${filteredRecipes.length} recipes in this category · Burnt Calories`:`${recipes.length} recipes · ${recipes.filter(r=>r.custom).length} custom · full macro breakdown`}
+          />
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {selRecipe&&!showUploader&&(
-              <button onClick={()=>setSelRecipe(null)} style={{padding:"9px 18px",borderRadius:40,fontSize:13,fontWeight:500,cursor:"pointer",background:"white",color:"#2D5A27",border:"1px solid #2D5A27",whiteSpace:"nowrap"}}>
-                ← All recipes
+            {selCategory&&!showUploader&&(
+              <button onClick={()=>{setSelCategory(null);setSelRecipe(null);setRecSearch('');}} style={{padding:"9px 18px",borderRadius:40,fontSize:13,fontWeight:500,cursor:"pointer",background:"white",color:tk.teal,border:`1px solid ${tk.teal}`,whiteSpace:"nowrap"}}>
+                ← All categories
+              </button>
+            )}
+            {selRecipe&&selCategory&&!showUploader&&(
+              <button onClick={()=>setSelRecipe(null)} style={{padding:"9px 18px",borderRadius:40,fontSize:13,fontWeight:500,cursor:"pointer",background:"white",color:tk.gray,border:`1px solid ${tk.gray}`,whiteSpace:"nowrap"}}>
+                ← Back
+              </button>
+            )}
+            {!showUploader&&(
+              <button onClick={()=>{setShowCatManager(true);setCatSearch('');setCatDrafts({});}} style={{padding:"9px 18px",background:"transparent",color:tk.teal,borderRadius:tk.rLg,cursor:"pointer",fontSize:13,fontWeight:500,border:`1px solid ${tk.teal}`,whiteSpace:"nowrap"}}>
+                ⚙ Manage categories
               </button>
             )}
             <button onClick={()=>{setShowUploader(u=>!u);setSelRecipe(null);}} style={{padding:"9px 18px",background:showUploader?"var(--color-background-secondary)":tk.teal,color:showUploader?"var(--color-text-primary)":"white",borderRadius:tk.rLg,cursor:"pointer",fontSize:13,fontWeight:500,border:showUploader?tk.bd:"none",whiteSpace:"nowrap"}}>
@@ -1308,19 +1570,48 @@ export default function BurntCaloriesApp() {
             </button>
           </div>
         </div>
+
         {showUploader&&<RecipeUploader ingredients={ingredients} onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
-        {!showUploader&&<>
-          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-            <input value={recSearch} onChange={e=>setRecSearch(e.target.value)} placeholder="Search recipes…" style={{flex:1,minWidth:180}}/>
-            <select value={recCat} onChange={e=>setRecCat(e.target.value)} style={{minWidth:130}}>
-              {["All","Breakfast","Lunch","Dinner","Snack"].map(c=><option key={c}>{c}</option>)}
-            </select>
-            <select value={recGoal} onChange={e=>setRecGoal(e.target.value)} style={{minWidth:150}}>
-              <option value="all">All goals</option>
-              {GOALS.map(g=><option key={g.id} value={g.id}>{g.icon} {g.label}</option>)}
-            </select>
+
+        {/* ── Category grid ── */}
+        {!showUploader&&!selCategory&&(
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:12}}>
+            {RECIPE_CATEGORIES.map(cat=>{
+              const count=getRecipesForCategory(cat,recipes).length;
+              return (
+                <div key={cat.id}
+                  onClick={()=>{setSelCategory(cat);setSelRecipe(null);setRecSearch('');window.scrollTo({top:0,behavior:'smooth'});}}
+                  style={{
+                    height:130,borderRadius:12,overflow:"hidden",cursor:"pointer",position:"relative",
+                    backgroundImage:`url(${cat.photo})`,backgroundSize:"cover",backgroundPosition:"center",
+                    backgroundColor:`${cat.color}33`,
+                    border:`1px solid ${cat.color}55`,
+                    transition:"transform 0.15s,border-color 0.15s",userSelect:"none",
+                  }}
+                  onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.02)";e.currentTarget.style.borderColor=cat.color;}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.borderColor=`${cat.color}55`;}}>
+                  {/* gradient overlay */}
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.62) 100%)"}}/>
+                  {/* content */}
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"10px 14px",display:"flex",alignItems:"flex-end",justifyContent:"space-between"}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:"#fff",lineHeight:1.2,textShadow:"0 1px 3px rgba(0,0,0,0.5)"}}>{cat.label}</div>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,0.72)",marginTop:2}}>{count} recipes</div>
+                    </div>
+                    <span style={{fontSize:26,lineHeight:1,filter:"drop-shadow(0 1px 3px rgba(0,0,0,0.5))"}}>{cat.emoji}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          {selRecipe&&<RecipeDetail key={selRecipe.id} recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null} onUpdate={updateRecipe}/>}
+        )}
+
+        {/* ── Category recipe list ── */}
+        {!showUploader&&selCategory&&<>
+          <div style={{display:"flex",gap:8,marginBottom:16}}>
+            <input value={recSearch} onChange={e=>setRecSearch(e.target.value)} placeholder={`Search ${selCategory.label}…`} style={{flex:1,minWidth:180}}/>
+          </div>
+          {selRecipe&&<RecipeDetail key={selRecipe.id} recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null} onUpdate={updateRecipe} allIngredients={ingredients}/>}
           <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:14,marginTop:selRecipe?16:0}}>{filteredRecipes.length} recipes</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
             {filteredRecipes.map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>{
@@ -1331,6 +1622,111 @@ export default function BurntCaloriesApp() {
           </div>
         </>}
       </>)}
+
+      {/* ── Bulk category editor modal ── */}
+      {showCatManager&&(()=>{
+        function getCatDraft(r){
+          const d=catDrafts[r.id]||{};
+          return {cat:d.cat??r.cat??'Lunch',tags:d.tags??parseArr(r.tags),goal:d.goal??parseArr(r.goal)};
+        }
+        function patchDraft(id,patch){
+          setCatDrafts(prev=>({...prev,[id]:{...(prev[id]||{}), ...patch}}));
+        }
+        async function saveAll(){
+          setCatSaving(true);
+          for(const [idStr,patch] of Object.entries(catDrafts)){
+            const id=+idStr;
+            const {error}=await supabase.from('recipes').update(patch).eq('id',id);
+            if(!error){const rec=recipes.find(r=>r.id===id);if(rec)updateRecipe({...rec,...patch});}
+          }
+          setCatDrafts({});setCatSaving(false);setShowCatManager(false);
+        }
+        const changed=Object.keys(catDrafts).length;
+        const q=catSearch.toLowerCase();
+        const visible=recipes.filter(r=>!q||r.name.toLowerCase().includes(q)||(r.cat||'').toLowerCase().includes(q)).slice(0,120);
+        return (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:1000,display:"flex",flexDirection:"column"}}
+            onClick={()=>setShowCatManager(false)}>
+            <div style={{background:"var(--color-background-primary)",margin:"24px auto",width:"min(1100px,96vw)",maxHeight:"calc(100vh - 48px)",borderRadius:tk.rLg,display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 12px 48px rgba(0,0,0,0.3)"}}
+              onClick={e=>e.stopPropagation()}>
+              {/* header */}
+              <div style={{padding:"16px 20px",borderBottom:tk.bd,display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+                <h2 style={{fontSize:16,fontWeight:600,margin:0,flex:1}}>Manage recipe categories</h2>
+                <input value={catSearch} onChange={e=>setCatSearch(e.target.value)} placeholder="Search recipes…"
+                  style={{padding:"7px 12px",borderRadius:8,border:tk.bdMed,fontSize:12,width:220,outline:"none"}}/>
+                <button onClick={saveAll} disabled={catSaving||changed===0}
+                  style={{padding:"9px 20px",borderRadius:40,border:"none",background:changed>0?"#E8621A":"#ccc",color:"white",fontSize:13,fontWeight:600,cursor:changed>0?"pointer":"default",whiteSpace:"nowrap"}}>
+                  {catSaving?"Saving…":`Save ${changed>0?changed+" change"+(changed>1?"s":""):"changes"}`}
+                </button>
+                <button onClick={()=>setShowCatManager(false)} style={{fontSize:22,border:"none",background:"transparent",cursor:"pointer",color:"var(--color-text-secondary)",padding:"0 4px",lineHeight:1}}>×</button>
+              </div>
+              {/* table */}
+              <div style={{overflowY:"auto",flex:1}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                  <thead style={{position:"sticky",top:0,background:"var(--color-background-secondary)",zIndex:1}}>
+                    <tr>
+                      <th style={{padding:"8px 12px",textAlign:"left",fontSize:11,fontWeight:600,color:"var(--color-text-secondary)",borderBottom:tk.bd,width:"28%"}}>Recipe</th>
+                      <th style={{padding:"8px 12px",textAlign:"left",fontSize:11,fontWeight:600,color:"var(--color-text-secondary)",borderBottom:tk.bd,width:"10%"}}>Meal cat</th>
+                      <th style={{padding:"8px 12px",textAlign:"left",fontSize:11,fontWeight:600,color:"var(--color-text-secondary)",borderBottom:tk.bd,width:"42%"}}>Section tags</th>
+                      <th style={{padding:"8px 12px",textAlign:"left",fontSize:11,fontWeight:600,color:"var(--color-text-secondary)",borderBottom:tk.bd,width:"20%"}}>Goals</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visible.map(r=>{
+                      const d=getCatDraft(r);
+                      const isDirty=!!catDrafts[r.id];
+                      return (
+                        <tr key={r.id} style={{borderBottom:tk.bd,background:isDirty?"#FFFBF5":"transparent"}}>
+                          <td style={{padding:"8px 12px",verticalAlign:"middle"}}>
+                            <span style={{fontSize:14,marginRight:6}}>{r.emoji}</span>
+                            <span style={{fontWeight:isDirty?600:400}}>{r.name}</span>
+                          </td>
+                          <td style={{padding:"8px 12px",verticalAlign:"middle"}}>
+                            <select value={d.cat} onChange={e=>patchDraft(r.id,{cat:e.target.value})}
+                              style={{padding:"4px 6px",borderRadius:6,border:tk.bdMed,fontSize:12,background:"var(--color-background-primary)",cursor:"pointer",outline:"none"}}>
+                              {["Breakfast","Lunch","Dinner","Snack"].map(c=><option key={c}>{c}</option>)}
+                            </select>
+                          </td>
+                          <td style={{padding:"6px 12px",verticalAlign:"middle"}}>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+                              {SECTION_TAGS.map(({label,emoji})=>{
+                                const on=d.tags.includes(label);
+                                return (
+                                  <button key={label} title={label} onClick={()=>patchDraft(r.id,{tags:on?d.tags.filter(t=>t!==label):[...d.tags,label]})}
+                                    style={{padding:"2px 6px",borderRadius:20,fontSize:10,cursor:"pointer",border:`1px solid ${on?"#2D5A27":"#ddd"}`,background:on?"#EAF3DE":"transparent",color:on?"#2D5A27":"#aaa",fontWeight:on?600:400}}>
+                                    {emoji}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </td>
+                          <td style={{padding:"6px 12px",verticalAlign:"middle"}}>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+                              {GOALS.map(g=>{
+                                const on=d.goal.includes(g.id);
+                                return (
+                                  <button key={g.id} title={g.label} onClick={()=>patchDraft(r.id,{goal:on?d.goal.filter(x=>x!==g.id):[...d.goal,g.id]})}
+                                    style={{padding:"2px 6px",borderRadius:20,fontSize:10,cursor:"pointer",border:`1px solid ${on?"#E8621A":"#ddd"}`,background:on?"#FDEEE6":"transparent",color:on?"#E8621A":"#aaa",fontWeight:on?600:400}}>
+                                    {g.icon}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {visible.length===0&&<div style={{textAlign:"center",padding:32,color:"var(--color-text-tertiary)"}}>No recipes match</div>}
+                {recipes.filter(r=>!q||r.name.toLowerCase().includes(q)).length>120&&(
+                  <div style={{textAlign:"center",padding:12,fontSize:12,color:"var(--color-text-tertiary)"}}>Showing first 120 — use search to narrow</div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 
@@ -1417,8 +1813,8 @@ export default function BurntCaloriesApp() {
           {ingSubs.length>2&&<select value={ingSub} onChange={e=>setIngSub(e.target.value)} style={{minWidth:150}}>{ingSubs.map(s=><option key={s}>{s}</option>)}</select>}
         </div>
         <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:12}}>{filteredIngs.length} ingredients</div>
-        <div style={{...crd,padding:0,overflow:"hidden"}}>
-          <div style={{display:"grid",gridTemplateColumns:"2.2fr 0.55fr 0.65fr 0.55fr 0.55fr 0.55fr 2.8fr",gap:12,padding:"10px 16px",background:"var(--color-background-secondary)",fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.08em"}}>
+        <div style={{...crd,padding:0,overflow:"clip"}}>
+          <div style={{display:"grid",gridTemplateColumns:"2.2fr 0.55fr 0.65fr 0.55fr 0.55fr 0.55fr 2.8fr",gap:12,padding:"10px 16px",background:"var(--color-background-primary)",fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.08em",position:"sticky",top:isMobile?96:108,zIndex:10,borderBottom:"2px solid #c8c8c8"}}>
             <span>Ingredient</span><span>kcal</span><span>Protein</span><span>Carbs</span><span>Fat</span><span>Fibre</span><span>Top benefits</span>
           </div>
           {filteredIngs.map((ing,i)=>(
@@ -1578,7 +1974,7 @@ export default function BurntCaloriesApp() {
                     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
                       {recipes.filter(r=>parseArr(r.goal).includes(clientDraft.goal)).slice(0,4).map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>setSelRecipe(selRecipe?.id===r.id?null:r)}/>)}
                     </div>
-                    {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)} onUpdate={updateRecipe}/>}
+                    {selRecipe&&<RecipeDetail recipe={selRecipe} onClose={()=>setSelRecipe(null)} onUpdate={updateRecipe} allIngredients={ingredients}/>}
                   </div>
                 )}
               </div>
@@ -1600,11 +1996,27 @@ export default function BurntCaloriesApp() {
     const shoppingList=currentPlan?buildShoppingList(currentPlan,recipes,ingredients):[];
     const shoppingGrouped=shoppingList.reduce((acc,item)=>({...acc,[item.cat]:[...(acc[item.cat]||[]),item]}),{});
 
-    function handleGenerate() {
+    async function handleGenerate() {
       if(!selSubject||!selMacros) return;
-      setCurrentPlan(generateWeeklyPlan(selSubject,recipes));
+      setPlanSwapTarget(null);
+      setPlanSwapSearch('');
+      const {data:freshRecs}=await supabase.from('recipes').select('*').order('id');
+      const recs=freshRecs?.length?freshRecs.map(normalizeRecipe):recipes;
+      if(freshRecs?.length) setRecipes(recs);
+      setCurrentPlan(generateWeeklyPlan(selSubject,recs));
       setPlanView('plan');
     }
+    function swapMeal(di,mi,newId){
+      setCurrentPlan(prev=>({...prev,days:prev.days.map((day,d)=>d!==di?day:{...day,meals:day.meals.map((meal,m)=>m!==mi?meal:{...meal,recipeId:newId})})}));
+      setPlanSwapTarget(null); setPlanSwapSearch('');
+    }
+    function removeMeal(di,mi){
+      setCurrentPlan(prev=>({...prev,days:prev.days.map((day,d)=>d!==di?day:{...day,meals:day.meals.map((meal,m)=>m!==mi?meal:{...meal,recipeId:null})})}));
+    }
+    function setMealNote(di,mi,note){
+      setCurrentPlan(prev=>({...prev,days:prev.days.map((day,d)=>d!==di?day:{...day,meals:day.meals.map((meal,m)=>m!==mi?meal:{...meal,note})})}));
+    }
+    function setPlanNotes(notes){ setCurrentPlan(prev=>({...prev,notes})); }
 
     function handlePrintShopping() {
       const grouped=shoppingGrouped;
@@ -1619,6 +2031,7 @@ export default function BurntCaloriesApp() {
         </head><body>
         <h1>Weekly shopping list</h1>
         <p>${selSubject?.displayName} · ${goalInfo?.label||''} · ${selMacros?.targetCal||''} kcal/day · 7-day plan · Burnt Calories</p>
+        ${currentPlan?.notes?`<p style="background:#EAF3DE;padding:10px 14px;border-radius:6px;color:#2D5A27;font-size:12px"><strong>Kitchen notes:</strong> ${currentPlan.notes}</p>`:''}
         <table>${rowsHtml}</table>
         <div class="logo"><strong style="color:#E8621A">Burnt Calories</strong> — burntcalories.com</div>
         <div style="text-align:center;margin-top:20px"><button onclick="window.print()" style="padding:10px 24px;background:#E8621A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Print / Save PDF</button></div>
@@ -1689,8 +2102,9 @@ export default function BurntCaloriesApp() {
                     <h2 style={{fontSize:16,fontWeight:600,margin:0}}>{selSubject?.displayName} — 7-day plan</h2>
                     {selMacros&&<Pill text={`${selMacros.targetCal} kcal/day target`} color={tk.tealText} bg={tk.tealSurf}/>}
                   </div>
-                  <div style={{display:"flex",gap:8}}>
-                    <button onClick={handleGenerate} style={{padding:"7px 14px",borderRadius:tk.r,fontSize:12,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>↺ Regenerate</button>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <button onClick={handleGenerate} style={{padding:"8px 16px",borderRadius:40,fontSize:12,cursor:"pointer",background:"#E8621A",color:"white",border:"none",fontWeight:600,boxShadow:"0 2px 8px rgba(232,98,26,0.25)"}}>🔄 Generate new plan</button>
+                    <button onClick={()=>{setCurrentPlan(null);setPlanSwapTarget(null);}} style={{padding:"7px 14px",borderRadius:tk.r,fontSize:12,cursor:"pointer",border:tk.bdMed,background:"transparent",color:"var(--color-text-secondary)"}}>✕ Clear plan</button>
                     <button onClick={()=>setPlanView(v=>v==='plan'?'shopping':'plan')} style={{padding:"7px 14px",borderRadius:tk.r,fontSize:12,cursor:"pointer",border:`1px solid ${tk.teal}`,background:planView==='shopping'?tk.teal:"transparent",color:planView==='shopping'?"white":tk.teal,fontWeight:500}}>
                       {planView==='plan'?'🛒 Shopping list':'📅 Meal plan'}
                     </button>
@@ -1699,64 +2113,151 @@ export default function BurntCaloriesApp() {
                 </div>
 
                 {/* ── Plan view ── */}
-                {planView==='plan'&&(
-                  <div style={{overflowX:"auto",paddingBottom:8}}>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(190px,1fr))",gap:10,minWidth:1340}}>
-                      {currentPlan.days.map((day,di)=>{
-                        let dayCal=0,dayP=0,dayC=0,dayF=0;
-                        day.meals.forEach(meal=>{
-                          const r=recipes.find(x=>x.id===meal.recipeId);
-                          if(r){const m=recipeTotals(r);dayCal+=m.cal;dayP+=m.p;dayC+=m.c;dayF+=m.f;}
-                        });
-                        const pct=selMacros?Math.min(100,Math.round(dayCal/selMacros.targetCal*100)):0;
-                        return (
-                          <div key={di} style={{...crd,padding:0,overflow:"hidden"}}>
-                            {/* Day header */}
-                            <div style={{background:"#2D5A27",padding:"8px 12px"}}>
-                              <div style={{fontSize:11,fontWeight:600,color:"#fff",letterSpacing:"0.05em"}}>{day.day.toUpperCase()}</div>
-                            </div>
-                            {/* Meal slots */}
-                            <div style={{padding:"8px 10px",display:"flex",flexDirection:"column",gap:6}}>
-                              {day.meals.map((meal,mi)=>{
-                                const slot=MEAL_SLOTS[mi];
-                                const r=recipes.find(x=>x.id===meal.recipeId);
-                                const m=r?recipeTotals(r):null;
-                                return (
-                                  <div key={mi} style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:"7px 9px"}}>
-                                    <div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{slot.label}</div>
-                                    {r?(
-                                      <>
-                                        <div style={{fontSize:11,fontWeight:500,lineHeight:1.3,marginBottom:3}}>{r.emoji} {r.name}</div>
-                                        <div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{m.cal} kcal · <span style={{color:tk.blue}}>{m.p}g P</span></div>
-                                      </>
-                                    ):(
-                                      <div style={{fontSize:11,color:"var(--color-text-tertiary)",fontStyle:"italic"}}>No recipe</div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            {/* Day macro total */}
-                            <div style={{padding:"8px 10px",borderTop:tk.bd}}>
-                              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--color-text-secondary)",marginBottom:5}}>
-                                <span>{Math.round(dayCal)} kcal</span>
-                                <span>{pct}% of target</span>
-                              </div>
-                              <div style={{height:4,background:"var(--color-background-secondary)",borderRadius:2}}>
-                                <div style={{height:"100%",width:pct+"%",background:pct>=85&&pct<=115?"#2D5A27":pct<70?"#E24B4A":"#C47C0A",borderRadius:2,transition:"width 0.3s"}}/>
-                              </div>
-                              <div style={{display:"flex",gap:8,marginTop:5,fontSize:9,color:"var(--color-text-tertiary)"}}>
-                                <span style={{color:tk.blue}}>{Math.round(dayP)}P</span>
-                                <span style={{color:tk.green}}>{Math.round(dayC)}C</span>
-                                <span style={{color:tk.coral}}>{Math.round(dayF)}F</span>
-                              </div>
-                            </div>
+                {/* ── Swap modal ── */}
+                {planSwapTarget&&(()=>{
+                  const slot=MEAL_SLOTS[planSwapTarget.mi];
+                  const currentMeal=currentPlan.days[planSwapTarget.di]?.meals[planSwapTarget.mi];
+                  const validForSlot=recipes.filter(rec=>{
+                    const tot=recipeTotals(rec);
+                    if(tot.cal===0||tot.cal>900||tot.p>120) return false;
+                    if(tot.cal<50&&!parseArr(rec.tags).includes('Bone Broth')) return false;
+                    if(tot.c>200) return false;
+                    return rec.cat===slot.cat;
+                  });
+                  const filtered=planSwapSearch
+                    ?validForSlot.filter(rec=>rec.name.toLowerCase().includes(planSwapSearch.toLowerCase()))
+                    :validForSlot;
+                  return (
+                    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}}
+                      onClick={()=>{setPlanSwapTarget(null);setPlanSwapSearch('');}}>
+                      <div style={{background:"var(--color-background-primary)",borderRadius:tk.rLg,padding:24,width:500,maxWidth:"92vw",maxHeight:"82vh",display:"flex",flexDirection:"column",gap:14,boxShadow:"0 8px 40px rgba(0,0,0,0.25)"}}
+                        onClick={e=>e.stopPropagation()}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                          <div>
+                            <div style={{fontSize:15,fontWeight:600,marginBottom:2}}>Swap {slot.label}</div>
+                            <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{DAYS_OF_WEEK[planSwapTarget.di]} · pick a {slot.cat.toLowerCase()} recipe</div>
                           </div>
-                        );
-                      })}
+                          <button onClick={()=>{setPlanSwapTarget(null);setPlanSwapSearch('');}}
+                            style={{fontSize:20,lineHeight:1,border:"none",background:"transparent",cursor:"pointer",color:"var(--color-text-secondary)",padding:"0 4px"}}>×</button>
+                        </div>
+                        <input autoFocus value={planSwapSearch} onChange={e=>setPlanSwapSearch(e.target.value)}
+                          placeholder={`Search ${slot.cat.toLowerCase()} recipes…`}
+                          style={{width:"100%",fontSize:13,padding:"9px 12px",borderRadius:8,border:tk.bdMed,boxSizing:"border-box",outline:"none"}}/>
+                        <div style={{overflowY:"auto",display:"flex",flexDirection:"column",gap:8,flex:1,minHeight:0}}>
+                          {filtered.slice(0,8).map(rec=>{
+                            const tm=recipeTotals(rec);
+                            const isCurrent=rec.id===currentMeal?.recipeId;
+                            return (
+                              <div key={rec.id}
+                                onClick={()=>swapMeal(planSwapTarget.di,planSwapTarget.mi,rec.id)}
+                                style={{padding:"11px 14px",borderRadius:10,cursor:"pointer",border:isCurrent?`2px solid #2D5A27`:tk.bd,background:isCurrent?"#EAF3DE":"var(--color-background-secondary)",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}
+                                onMouseOver={e=>e.currentTarget.style.background="#EAF3DE"}
+                                onMouseOut={e=>e.currentTarget.style.background=isCurrent?"#EAF3DE":"var(--color-background-secondary)"}>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:13,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{rec.emoji} {rec.name}</div>
+                                  <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginTop:2}}>
+                                    {tm.cal} kcal · <span style={{color:tk.blue}}>{tm.p}g P</span> · {tm.c}g C · {tm.f}g F
+                                  </div>
+                                </div>
+                                {isCurrent&&<span style={{fontSize:10,color:"#2D5A27",fontWeight:600,whiteSpace:"nowrap"}}>Current</span>}
+                              </div>
+                            );
+                          })}
+                          {filtered.length===0&&<div style={{fontSize:13,color:"var(--color-text-tertiary)",textAlign:"center",padding:24}}>No recipes found</div>}
+                          {filtered.length>8&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",textAlign:"center",paddingTop:4}}>+{filtered.length-8} more — refine search above</div>}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
+
+                {planView==='plan'&&(()=>{
+                  function SlotCard({meal,mi,di}){
+                    const slot=MEAL_SLOTS[mi];
+                    const r=recipes.find(x=>x.id===meal.recipeId);
+                    const m=r?recipeTotals(r):null;
+                    return (
+                      <div style={{background:"var(--color-background-secondary)",borderRadius:tk.r,padding:"7px 9px"}}>
+                        <div style={{fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{slot.label}</div>
+                        {r?(
+                          <>
+                            <div style={{fontSize:11,fontWeight:500,lineHeight:1.3,marginBottom:2}}>{r.emoji} {r.name}</div>
+                            <div style={{fontSize:10,color:"var(--color-text-tertiary)",marginBottom:5}}>{m.cal} kcal · <span style={{color:tk.blue}}>{m.p}g P</span></div>
+                            <div style={{display:"flex",gap:4}}>
+                              <button onClick={()=>{setPlanSwapTarget({di,mi});setPlanSwapSearch('');}}
+                                style={{fontSize:9,padding:"2px 6px",borderRadius:4,border:`1px solid ${tk.teal}`,background:"transparent",color:tk.teal,cursor:"pointer"}}>⇄ Swap</button>
+                              <button onClick={()=>removeMeal(di,mi)}
+                                style={{fontSize:9,padding:"2px 6px",borderRadius:4,border:"1px solid #E24B4A",background:"transparent",color:"#E24B4A",cursor:"pointer"}}>× Remove</button>
+                            </div>
+                          </>
+                        ):(
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5}}>
+                            <div style={{fontSize:11,color:"var(--color-text-tertiary)",fontStyle:"italic"}}>No recipe</div>
+                            <button onClick={()=>{setPlanSwapTarget({di,mi});setPlanSwapSearch('');}}
+                              style={{fontSize:9,padding:"2px 7px",borderRadius:4,border:`1px solid ${tk.teal}`,background:"transparent",color:tk.teal,cursor:"pointer"}}>+ Add</button>
+                          </div>
+                        )}
+                        <input value={meal.note||''} onChange={e=>setMealNote(di,mi,e.target.value)}
+                          placeholder="📝 note…"
+                          style={{width:"100%",marginTop:4,fontSize:10,padding:"2px 5px",borderRadius:4,border:meal.note?`1px solid ${tk.teal}`:"1px solid transparent",background:meal.note?"var(--color-background-primary)":"transparent",color:"var(--color-text-secondary)",boxSizing:"border-box",outline:"none"}}
+                          onFocus={e=>e.target.style.border=`1px solid ${tk.teal}`}
+                          onBlur={e=>{if(!meal.note)e.target.style.border="1px solid transparent";}}/>
+                      </div>
+                    );
+                  }
+                  function DayCard({day,di}){
+                    let dayCal=0,dayP=0,dayC=0,dayF=0;
+                    day.meals.forEach(meal=>{
+                      const r=recipes.find(x=>x.id===meal.recipeId);
+                      if(r){const mm=recipeTotals(r);dayCal+=mm.cal;dayP+=mm.p;dayC+=mm.c;dayF+=mm.f;}
+                    });
+                    const pct=selMacros?Math.min(100,Math.round(dayCal/selMacros.targetCal*100)):0;
+                    return (
+                      <div style={{...crd,padding:0,overflow:"hidden"}}>
+                        <div style={{background:"#2D5A27",padding:"8px 12px"}}>
+                          <div style={{fontSize:11,fontWeight:600,color:"#fff",letterSpacing:"0.05em"}}>{day.day.toUpperCase()}</div>
+                        </div>
+                        <div style={{padding:"8px 10px",display:"flex",flexDirection:"column",gap:6}}>
+                          {day.meals.map((meal,mi)=><SlotCard key={mi} meal={meal} mi={mi} di={di}/>)}
+                        </div>
+                        <div style={{padding:"8px 10px",borderTop:tk.bd}}>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--color-text-secondary)",marginBottom:5}}>
+                            <span>{Math.round(dayCal)} kcal</span>
+                            <span>{pct}% of target</span>
+                          </div>
+                          <div style={{height:4,background:"var(--color-background-secondary)",borderRadius:2}}>
+                            <div style={{height:"100%",width:pct+"%",background:pct>=85&&pct<=115?"#2D5A27":pct<70?"#E24B4A":"#C47C0A",borderRadius:2,transition:"width 0.3s"}}/>
+                          </div>
+                          <div style={{display:"flex",gap:8,marginTop:5,fontSize:9,color:"var(--color-text-tertiary)"}}>
+                            <span style={{color:tk.blue}}>{Math.round(dayP)}P</span>
+                            <span style={{color:tk.green}}>{Math.round(dayC)}C</span>
+                            <span style={{color:tk.coral}}>{Math.round(dayF)}F</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {/* Plan-level kitchen notes */}
+                      <div style={{...crd,padding:"12px 16px"}}>
+                        <label style={{fontSize:11,fontWeight:600,color:"#2D5A27",textTransform:"uppercase",letterSpacing:"0.06em",display:"block",marginBottom:6}}>Kitchen notes for this plan</label>
+                        <textarea value={currentPlan.notes||''} onChange={e=>setPlanNotes(e.target.value)}
+                          placeholder="e.g. No dairy · Extra rice on training days · Client prefers mild spice"
+                          rows={2}
+                          style={{width:"100%",fontSize:12,padding:"8px 10px",borderRadius:6,border:tk.bdMed,resize:"vertical",fontFamily:"inherit",color:"var(--color-text-primary)",background:"var(--color-background-secondary)",outline:"none",boxSizing:"border-box"}}
+                          onFocus={e=>e.target.style.border=`1px solid #2D5A27`}
+                          onBlur={e=>e.target.style.border=tk.bdMed}/>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                        {currentPlan.days.slice(0,4).map((day,di)=><DayCard key={di} day={day} di={di}/>)}
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                        {currentPlan.days.slice(4,7).map((day,di)=><DayCard key={di+4} day={day} di={di+4}/>)}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* ── Shopping list view ── */}
                 {planView==='shopping'&&(
