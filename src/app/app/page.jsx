@@ -1100,6 +1100,25 @@ function normalizeRecipe(r) {
   };
 }
 
+// ─── Paginated recipe fetch — bypasses PostgREST default row cap ────────────────
+async function fetchAllRecipes() {
+  const PAGE = 1000;
+  let all = [], from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .order('id')
+      .range(from, from + PAGE - 1);
+    if (error || !data?.length) break;
+    all = [...all, ...data];
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  console.log(`[Recipes] loaded ${all.length} total from Supabase`);
+  return all;
+}
+
 // ─── Main app ───────────────────────────────────────────────────────────────────
 export default function BurntCaloriesApp() {
   const [tab,setTab]   = useState("dashboard");
@@ -1161,9 +1180,8 @@ export default function BurntCaloriesApp() {
   useEffect(()=>{
     async function loadDb() {
       try {
-        const [{data:ings,error:ie},{data:recs,error:re},{data:cls,error:ce},{data:profs,error:pe}] = await Promise.all([
+        const [{data:ings,error:ie},{data:cls,error:ce},{data:profs,error:pe}] = await Promise.all([
           supabase.from('ingredients').select('*').order('id'),
-          supabase.from('recipes').select('*').order('id'),
           supabase.from('clients').select('*').order('id'),
           supabase.from('profiles').select('*').order('created_at',{ascending:false}).limit(1),
         ]);
@@ -1172,7 +1190,8 @@ export default function BurntCaloriesApp() {
           BASE_ING=normalized;
           setIngredients(normalized);
         }
-        if(!re && recs?.length) setRecipes(recs.map(normalizeRecipe));
+        const recs = await fetchAllRecipes();
+        if(recs.length) setRecipes(recs.map(normalizeRecipe));
         if(!ce && cls?.length) setClients(cls.map(c=>({...c,activityLevel:c.activity_level})));
         if(!pe && profs?.length) {
           const p=profs[0];
@@ -1990,8 +2009,8 @@ export default function BurntCaloriesApp() {
       if(!selSubject||!selMacros) return;
       setPlanSwapTarget(null);
       setPlanSwapSearch('');
-      const {data:freshRecs}=await supabase.from('recipes').select('*').order('id');
-      const recs=freshRecs?.length?freshRecs.map(normalizeRecipe):recipes;
+      const freshRecs=await fetchAllRecipes();
+      const recs=freshRecs.length?freshRecs.map(normalizeRecipe):recipes;
       if(freshRecs?.length) setRecipes(recs);
       setCurrentPlan(generateWeeklyPlan(selSubject,recs));
       setPlanView('plan');
