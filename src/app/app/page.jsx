@@ -890,7 +890,7 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
   async function save() {
     if(!form.name||ings.length===0||method.filter(m=>m.trim()).length===0) return;
     setUploading(true);
-    let photo_url=null;
+    let photo_url='';
     if(photoFile){
       try {
         const ext=photoFile.name.split('.').pop().toLowerCase();
@@ -902,6 +902,7 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
     const recipe={
       id:Date.now(),
       ...form,
+      goal:Array.isArray(form.goal)?form.goal:[form.goal].filter(Boolean),
       prep:+form.prep, cook:+form.cook, serves:+form.serves,
       ings,
       method:method.filter(m=>m.trim()),
@@ -909,8 +910,13 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
       custom:true,
       photo_url,
     };
-    onSave(recipe);
+    const err = await onSave(recipe);
     setUploading(false);
+    if(err) {
+      console.error('Recipe save failed:', err.message||err);
+      alert(`Save failed: ${err.message||'Unknown error — check console'}`);
+      return;
+    }
     setSaved(true);
     setTimeout(()=>{setSaved(false);onClose();},1200);
   }
@@ -1166,6 +1172,8 @@ export default function BurntCaloriesApp() {
   const [catSaving,setCatSaving] = useState(false);
   const [isMobile,setIsMobile] = useState(()=>typeof window!=='undefined'?window.innerWidth<768:false);
   const [navOpen,setNavOpen] = useState(false);
+  const gridScrollRef = useRef(0);
+  const urlParamHandledRef = useRef(false);
 
   useEffect(()=>{setMacros(calcMacros(profile));},[profile]);
   useEffect(()=>{
@@ -1206,8 +1214,9 @@ export default function BurntCaloriesApp() {
   },[]);
 
   async function addRecipe(recipe) {
+    const {error} = await supabase.from('recipes').upsert(recipe,{onConflict:'id'});
+    if(error) { console.error('Supabase upsert error:', error); return error; }
     setRecipes(prev=>[...prev,recipe]);
-    try { await supabase.from('recipes').upsert(recipe,{onConflict:'id'}); } catch(e){}
   }
   async function deleteRecipe(id) {
     setRecipes(prev=>prev.filter(r=>r.id!==id));
@@ -1580,7 +1589,7 @@ export default function BurntCaloriesApp() {
           </div>
         </div>
 
-        {showUploader&&<RecipeUploader ingredients={ingredients} onSave={r=>{addRecipe(r);setShowUploader(false);}} onClose={()=>setShowUploader(false)}/>}
+        {showUploader&&<RecipeUploader ingredients={ingredients} onSave={async r=>{const err=await addRecipe(r);if(!err)setShowUploader(false);return err;}} onClose={()=>setShowUploader(false)}/>}
 
         {/* ── Category grid ── */}
         {!showUploader&&!selCategory&&(
