@@ -679,12 +679,7 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}
         <span style="color:#666">${Math.round(ing.mx.cal)} kcal · <span style="color:#4A7C3F">${Math.round(ing.mx.p)}P</span></span>
       </div>`
     ).join('');
-    const methodHtml = method.map((step,i)=>
-      `<div style="display:flex;gap:10px;margin-bottom:10px;font-size:12px;align-items:flex-start">
-        <span style="min-width:22px;height:22px;border-radius:50%;background:#FDEEE6;color:#7A2B07;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0">${i+1}</span>
-        <span style="color:#444;line-height:1.6">${step}</span>
-      </div>`
-    ).join('');
+    const methodHtml=(()=>{let n=0;return method.map(step=>{if(/^\[.+\]$/.test(step.trim()))return`<div style="font-size:11px;font-weight:600;color:#1A3A15;margin:14px 0 6px;text-transform:uppercase;letter-spacing:0.05em">${step.replace(/^\[|\]$/g,'')}</div>`;n++;return`<div style="display:flex;gap:10px;margin-bottom:10px;font-size:12px;align-items:flex-start"><span style="min-width:22px;height:22px;border-radius:50%;background:#FDEEE6;color:#7A2B07;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0">${n}</span><span style="color:#444;line-height:1.6">${step}</span></div>`;}).join('');})();
     const w = window.open('','_blank','width=800,height=900');
     w.document.write(`<!DOCTYPE html><html><head><title>${recipe.name} — Burnt Calories</title>
       <style>
@@ -838,12 +833,7 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}
               </div>
             ))}
             <h3 style={{fontSize:13,fontWeight:500,margin:"20px 0 12px"}}>Method</h3>
-            {method.map((step,i)=>(
-              <div key={i} style={{display:"flex",gap:10,marginBottom:10,fontSize:12}}>
-                <span style={{width:20,height:20,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,flexShrink:0}}>{i+1}</span>
-                <span style={{color:"var(--color-text-secondary)",lineHeight:1.6}}>{step}</span>
-              </div>
-            ))}
+            {(()=>{let n=0;return method.map((step,i)=>{const isSec=/^\[.+\]$/.test(step.trim());if(isSec)return(<div key={i} style={{fontSize:11,fontWeight:600,color:tk.tealText,margin:"14px 0 6px",textTransform:"uppercase",letterSpacing:"0.05em"}}>{step.replace(/^\[|\]$/g,'')}</div>);n++;return(<div key={i} style={{display:"flex",gap:10,marginBottom:10,fontSize:12}}><span style={{width:20,height:20,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,flexShrink:0}}>{n}</span><span style={{color:"var(--color-text-secondary)",lineHeight:1.6}}>{step}</span></div>);});})()}
           </div>
           <div>
             <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Health benefits</h3>
