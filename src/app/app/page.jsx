@@ -345,13 +345,13 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}
   const editIngFiltered = useMemo(()=>{
     if(!editIngSearch||editIngSearch.length<2) return [];
     const q=editIngSearch.toLowerCase();
-    return allIngredients.filter(i=>i.name.toLowerCase().includes(q)||i.sub.toLowerCase().includes(q)).slice(0,10);
+    return allIngredients.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.sub||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q)).slice(0,10);
   },[editIngSearch,allIngredients]);
 
   const editIngQueryFiltered = useMemo(()=>{
     if(!editIngQuery||editIngQuery.length<1) return [];
     const q=editIngQuery.toLowerCase();
-    return allIngredients.filter(i=>i.name.toLowerCase().includes(q)).slice(0,10);
+    return allIngredients.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.sub||'').toLowerCase().includes(q)).slice(0,10);
   },[editIngQuery,allIngredients]);
 
   // ── view-mode computed ───────────────────────────────────────────────────────
@@ -921,7 +921,7 @@ function RecipeUploader({onSave,onClose,ingredients=BASE_ING}) {
     setTimeout(()=>{setSaved(false);onClose();},1200);
   }
 
-  const filtered=search.length>1?ingredients.filter(i=>i.name.toLowerCase().includes(search.toLowerCase())||i.sub.toLowerCase().includes(search.toLowerCase())).slice(0,12):[];
+  const filtered=search.length>1?ingredients.filter(i=>{const q=search.toLowerCase();return(i.name||'').toLowerCase().includes(q)||(i.sub||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q);}).slice(0,12):[];
   const lbl={fontSize:13,color:"#4A4A4A",display:"block",marginBottom:6,fontWeight:500};
   const inp={width:"100%",boxSizing:"border-box",padding:"10px 12px",border:"1px solid #cccccc",borderRadius:tk.r,fontSize:13,background:"var(--color-background-primary)",color:"var(--color-text-primary)"};
 
@@ -1348,12 +1348,15 @@ export default function BurntCaloriesApp() {
 
   const ingCats = useMemo(()=>["All",...new Set(ingredients.map(i=>i.cat))],[ingredients]);
   const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(ingredients.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingCat,ingredients]);
-  const filteredIngs = useMemo(()=>ingredients.filter(i=>{
-    const mc=ingCat==="All"||i.cat===ingCat;
-    const ms=ingSub==="All"||i.sub===ingSub;
-    const mt=!ingSearch||i.name.toLowerCase().includes(ingSearch.toLowerCase())||i.sub.toLowerCase().includes(ingSearch.toLowerCase());
-    return mc&&ms&&mt;
-  }),[ingCat,ingSub,ingSearch]);
+  const filteredIngs = useMemo(()=>{
+    const q=ingSearch.toLowerCase();
+    return ingredients.filter(i=>{
+      const mc=ingCat==="All"||i.cat===ingCat;
+      const ms=ingSub==="All"||i.sub===ingSub;
+      const mt=!q||(i.name||'').toLowerCase().includes(q)||(i.sub||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q);
+      return mc&&ms&&mt;
+    });
+  },[ingCat,ingSub,ingSearch]);
 
   const builderTotals = useMemo(()=>{
     let cal=0,p=0,c=0,f=0,fi=0;
@@ -1809,7 +1812,7 @@ export default function BurntCaloriesApp() {
               <div style={{marginBottom:14}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Meal name</label><input value={builderName} onChange={e=>setBuilderName(e.target.value)} placeholder="e.g. Post-workout bowl" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{marginBottom:12}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Find ingredient</label><input value={builderSearch} onChange={e=>setBuilderSearch(e.target.value)} placeholder="Type name, category or subcategory…" style={{width:"100%",boxSizing:"border-box"}}/></div>
               <div style={{maxHeight:300,overflowY:"auto",border:tk.bd,borderRadius:tk.r}}>
-                {ingredients.filter(i=>!builderSearch||i.name.toLowerCase().includes(builderSearch.toLowerCase())||i.sub.toLowerCase().includes(builderSearch.toLowerCase())).slice(0,50).map(ing=>(
+                {ingredients.filter(i=>{if(!builderSearch)return true;const q=builderSearch.toLowerCase();return(i.name||'').toLowerCase().includes(q)||(i.sub||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q);}).slice(0,50).map(ing=>(
                   <div key={ing.id} onClick={()=>{if(!builderIngs.find(b=>b.id===ing.id))setBuilderIngs(b=>[...b,{id:ing.id,amt:100}]);}} style={{padding:"9px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}
                     onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
                     onMouseLeave={e=>e.currentTarget.style.background=""}>
