@@ -1213,6 +1213,36 @@ export default function BurntCaloriesApp() {
     loadDb();
   },[]);
 
+  useEffect(()=>{
+    function onPopState(e) {
+      const params = new URLSearchParams(window.location.search);
+      if(!params.has('recipe')) {
+        if(e.state?.catId) {
+          const cat = RECIPE_CATEGORIES.find(c=>c.id===e.state.catId);
+          if(cat) setSelCategory(cat);
+        }
+        setSelRecipe(null);
+        requestAnimationFrame(()=>window.scrollTo({top:gridScrollRef.current}));
+      } else {
+        const rid = +params.get('recipe');
+        const r = recipes.find(x=>x.id===rid);
+        if(r) setSelRecipe(r);
+      }
+    }
+    window.addEventListener('popstate', onPopState);
+    return ()=>window.removeEventListener('popstate', onPopState);
+  },[recipes]);
+
+  useEffect(()=>{
+    if(!recipes.length||urlParamHandledRef.current) return;
+    urlParamHandledRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const rid = +params.get('recipe');
+    if(!rid) return;
+    const r = recipes.find(x=>x.id===rid);
+    if(r) setSelRecipe(r);
+  },[recipes]);
+
   async function addRecipe(recipe) {
     const {error} = await supabase.from('recipes').upsert(recipe,{onConflict:'id'});
     if(error) { console.error('Supabase upsert error:', error); return error; }
@@ -1220,7 +1250,12 @@ export default function BurntCaloriesApp() {
   }
   async function deleteRecipe(id) {
     setRecipes(prev=>prev.filter(r=>r.id!==id));
-    if(selRecipe?.id===id) setSelRecipe(null);
+    if(selRecipe?.id===id) {
+      setSelRecipe(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('recipe');
+      window.history.replaceState({}, '', url.toString());
+    }
     try { await supabase.from('recipes').delete().eq('id',id); } catch(e){}
   }
   async function saveProfile() {
@@ -1246,6 +1281,21 @@ export default function BurntCaloriesApp() {
   function updateRecipe(updated) {
     setRecipes(prev=>prev.map(r=>r.id===updated.id?normalizeRecipe(updated):r));
     if(selRecipe?.id===updated.id) setSelRecipe(normalizeRecipe(updated));
+  }
+  function openRecipe(r) {
+    gridScrollRef.current = window.scrollY;
+    setSelRecipe(r);
+    const url = new URL(window.location.href);
+    url.searchParams.set('recipe', r.id);
+    window.history.pushState({recipeId:r.id, catId:selCategory?.id}, '', url.toString());
+  }
+  function closeRecipe() {
+    const savedScroll = gridScrollRef.current;
+    setSelRecipe(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('recipe');
+    window.history.replaceState({}, '', url.toString());
+    requestAnimationFrame(()=>window.scrollTo({top:savedScroll}));
   }
   async function saveClient() {
     if(!clientDraft) return;
@@ -1573,9 +1623,9 @@ export default function BurntCaloriesApp() {
                 ← All categories
               </button>
             )}
-            {selRecipe&&selCategory&&!showUploader&&(
-              <button onClick={()=>setSelRecipe(null)} style={{padding:"9px 18px",borderRadius:40,fontSize:13,fontWeight:500,cursor:"pointer",background:"white",color:tk.gray,border:`1px solid ${tk.gray}`,whiteSpace:"nowrap"}}>
-                ← Back
+            {selRecipe&&!showUploader&&(
+              <button onClick={closeRecipe} style={{padding:"9px 18px",borderRadius:40,fontSize:13,fontWeight:500,cursor:"pointer",background:"white",color:tk.gray,border:`1px solid ${tk.gray}`,whiteSpace:"nowrap"}}>
+                ← All recipes
               </button>
             )}
             {!showUploader&&(
@@ -1624,19 +1674,19 @@ export default function BurntCaloriesApp() {
           </div>
         )}
 
-        {/* ── Category recipe list ── */}
-        {!showUploader&&selCategory&&<>
+        {/* ── Full-page recipe detail ── */}
+        {!showUploader&&selRecipe&&(
+          <RecipeDetail key={selRecipe.id} recipe={selRecipe} onClose={closeRecipe} onDelete={selRecipe.custom?deleteRecipe:null} onUpdate={updateRecipe} allIngredients={ingredients}/>
+        )}
+
+        {/* ── Category recipe grid — hidden while detail is open ── */}
+        {!showUploader&&selCategory&&!selRecipe&&<>
           <div style={{display:"flex",gap:8,marginBottom:16}}>
             <input value={recSearch} onChange={e=>setRecSearch(e.target.value)} placeholder={`Search ${selCategory.label}…`} style={{flex:1,minWidth:180}}/>
           </div>
-          {selRecipe&&<RecipeDetail key={selRecipe.id} recipe={selRecipe} onClose={()=>setSelRecipe(null)} onDelete={selRecipe.custom?deleteRecipe:null} onUpdate={updateRecipe} allIngredients={ingredients}/>}
-          <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:14,marginTop:selRecipe?16:0}}>{filteredRecipes.length} recipes</div>
+          <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:14}}>{filteredRecipes.length} recipes</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
-            {filteredRecipes.map(r=><RecipeCard key={r.id} recipe={r} selected={selRecipe?.id===r.id} onSelect={r=>{
-              const next=selRecipe?.id===r.id?null:r;
-              setSelRecipe(next);
-              if(next) window.scrollTo({top:0,behavior:'smooth'});
-            }}/>)}
+            {filteredRecipes.map(r=><RecipeCard key={r.id} recipe={r} selected={false} onSelect={openRecipe}/>)}
           </div>
         </>}
       </>)}
