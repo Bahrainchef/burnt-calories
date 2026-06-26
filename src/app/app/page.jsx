@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import MealBuilderTab from "./MealBuilderTab";
 
 const parseArr = (f) => {
   if (Array.isArray(f)) return f
@@ -321,6 +322,11 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}
   const [photoDragOver,setPhotoDragOver]     = useState(false);
   const [multiplier,setMultiplier]           = useState(1);
   const [customQty,setCustomQty]             = useState('');
+  const [ingPortions,setIngPortions]         = useState(()=>{
+    const s=recipe.serves||1; const map={};
+    parseArr(recipe.ings).forEach(ri=>{map[ri.id]=Math.max(5,Math.round(ri.amt/s));});
+    return map;
+  });
   const photoInputRef = useRef(null);
 
   const [editMode,setEditMode]               = useState(false);
@@ -363,6 +369,16 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}
   const m=recipeTotals(safeRecipe);
   const resolved=ings.map(ri=>{const ing=BASE_ING.find(i=>i.id===ri.id);if(!ing)return null;return {...ing,amt:ri.amt,mx:ingMacros(ri)};}).filter(Boolean);
   const hasPhoto = !!localPhoto;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const adjustedTotals = useMemo(()=>{
+    let cal=0,p=0,c=0,f=0,fi=0;
+    ings.forEach(ri=>{
+      const g=ingPortions[ri.id]??Math.max(5,Math.round(ri.amt/(recipe.serves||1)));
+      const mx=ingMacros({id:ri.id,amt:g});
+      cal+=mx.cal;p+=mx.p;c+=mx.c;f+=mx.f;fi+=mx.fi;
+    });
+    return {cal:Math.round(cal*multiplier),p:Math.round(p*multiplier),c:Math.round(c*multiplier),f:Math.round(f*multiplier),fi:Math.round(fi*multiplier)};
+  },[ingPortions,multiplier]);  // ings derived from recipe prop which is stable within mount
 
   // ── edit helpers ─────────────────────────────────────────────────────────────
   function startEdit() {
@@ -763,12 +779,76 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}
         </div>
         <p style={{fontSize:13,color:"var(--color-text-secondary)",lineHeight:1.6,marginBottom:16}}>{recipe.desc}</p>
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>{tags.map(tag=><Pill key={tag} text={tag} color={tk.teal} bg={tk.tealSurf}/>)}</div>
-        {multiplier>1&&<div style={{textAlign:"center",fontSize:11,fontWeight:500,color:tk.teal,marginBottom:4}}>Total for {multiplier} serving{multiplier!==1?"s":""}</div>}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",background:"var(--color-background-secondary)",borderRadius:tk.rLg,padding:"16px 12px",marginBottom:16}}>
-          {[["Calories",Math.round(m.cal*multiplier),""],["Protein",Math.round(m.p*multiplier),"g"],["Carbs",Math.round(m.c*multiplier),"g"],["Fat",Math.round(m.f*multiplier),"g"],["Fibre",Math.round(m.fi*multiplier),"g"]].map(([l,v,u])=>(
-            <div key={l} style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:500}}>{v}{u}</div><div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:3}}>{l}</div></div>
-          ))}
-        </div>
+        {/* ── Dark slate nutrition totals card ── */}
+        {(()=>{
+          const CIRC=2*Math.PI*54;
+          const DC={bg:"#2b303a",track:"#3a414e",tile:"#353c48",primary:"#2D5A27",protein:"#36cf7c",carbs:"#f7709f",fat:"#ff8463",fiber:"#0bb3a6",head:"#c7ccd6",sub:"#99a0ac"};
+          const tot=adjustedTotals;
+          const proK=tot.p*4, carbK=tot.c*4, fatK=tot.f*9;
+          const totalMK=proK+carbK+fatK||1;
+          const pPct=Math.round(proK/totalMK*100), cPct=Math.round(carbK/totalMK*100), fPct=100-pPct-cPct;
+          const proteinBarW=Math.min(100,Math.round(proK/tot.cal*250));
+          return (
+            <div style={{background:DC.bg,borderRadius:20,padding:"18px 20px",marginBottom:16,color:"#fff"}}>
+              <div style={{fontSize:12,fontWeight:700,color:DC.head,marginBottom:14}}>
+                {multiplier>1?`Nutrition · ${multiplier} servings`:"Nutrition · per serving"}
+              </div>
+              <div style={{display:"flex",gap:16,alignItems:"center",marginBottom:14}}>
+                {/* Calorie ring */}
+                <div style={{position:"relative",flexShrink:0}}>
+                  <svg width={118} height={118} style={{transform:"rotate(-90deg)"}}>
+                    <circle cx={59} cy={59} r={48} fill="none" stroke={DC.track} strokeWidth={11}/>
+                    <circle cx={59} cy={59} r={48} fill="none" stroke={DC.primary} strokeWidth={11}
+                      strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={0}/>
+                  </svg>
+                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                    <div style={{fontSize:24,fontWeight:800,letterSpacing:"-.02em",lineHeight:1}}>{tot.cal}</div>
+                    <div style={{fontSize:9,color:DC.sub,marginTop:2}}>kcal</div>
+                  </div>
+                </div>
+                {/* Protein + energy split */}
+                <div style={{flex:1}}>
+                  <div style={{marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:DC.head,marginBottom:5}}>
+                      <span>Protein</span><span style={{fontWeight:700,color:DC.protein}}>{tot.p}g</span>
+                    </div>
+                    <div style={{height:6,borderRadius:3,background:DC.track,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:proteinBarW+"%",background:DC.protein,borderRadius:3,transition:"width .4s cubic-bezier(.2,.8,.2,1)"}}/>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10,color:DC.sub,marginBottom:5}}>Energy split</div>
+                    <div style={{height:7,borderRadius:4,overflow:"hidden",display:"flex",marginBottom:6}}>
+                      <div style={{width:pPct+"%",background:DC.protein,transition:"width .4s"}}/>
+                      <div style={{width:cPct+"%",background:DC.carbs,transition:"width .4s"}}/>
+                      <div style={{width:fPct+"%",background:DC.fat,transition:"width .4s"}}/>
+                    </div>
+                    <div style={{display:"flex",gap:10,fontSize:10,color:DC.sub}}>
+                      {[[DC.protein,"Pro"],[DC.carbs,"Carb"],[DC.fat,"Fat"]].map(([col,lbl])=>(
+                        <span key={lbl} style={{display:"flex",alignItems:"center",gap:3}}>
+                          <span style={{width:6,height:6,borderRadius:"50%",background:col,display:"inline-block"}}/>
+                          {lbl}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Sub-tiles */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                {[["Carbs",tot.c,DC.carbs],["Fat",tot.f,DC.fat],["Fiber",tot.fi,DC.fiber]].map(([label,val,col])=>(
+                  <div key={label} style={{background:DC.tile,borderRadius:12,padding:"10px 12px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:4}}>
+                      <span style={{width:6,height:6,borderRadius:"50%",background:col,display:"inline-block"}}/>
+                      <span style={{fontSize:10,color:DC.sub}}>{label}</span>
+                    </div>
+                    <div style={{fontSize:18,fontWeight:700}}>{val}<span style={{fontSize:11,color:DC.sub,marginLeft:2}}>g</span></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Serving multiplier */}
         <div style={{marginBottom:20,padding:"12px 14px",background:"var(--color-background-secondary)",borderRadius:tk.r}}>
@@ -826,12 +906,29 @@ function RecipeDetail({recipe,onClose,onDelete,onUpdate,allIngredients=BASE_ING}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
           <div>
             <h3 style={{fontSize:13,fontWeight:500,marginBottom:12}}>Ingredients</h3>
-            {resolved.map((ing,i)=>(
-              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:tk.bd,fontSize:12}}>
-                <div><span style={{fontWeight:500}}>{ing.name}</span><span style={{color:"var(--color-text-tertiary)",marginLeft:6}}>{fmtAmt(ing.amt*multiplier)}</span></div>
-                <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{Math.round(ing.mx.cal*multiplier)} kcal · <span style={{color:tk.blue}}>{Math.round(ing.mx.p*multiplier)}P</span></div>
-              </div>
-            ))}
+            {resolved.map((ing,i)=>{
+              const portionG=ingPortions[ing.id]??Math.max(5,Math.round(ing.amt/(recipe.serves||1)));
+              const mx=ingMacros({id:ing.id,amt:portionG*multiplier});
+              return (
+                <div key={i} style={{padding:"10px 0",borderBottom:tk.bd}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
+                    <span style={{fontSize:12,fontWeight:500}}>{ing.name}</span>
+                    <div style={{fontSize:11,textAlign:"right",flexShrink:0,marginLeft:8}}>
+                      <span style={{fontWeight:600,color:"var(--color-text-primary)"}}>{Math.round(mx.cal)} kcal</span>
+                      <span style={{marginLeft:5,color:"#36cf7c"}}>{Math.round(mx.p)}P</span>
+                      <span style={{marginLeft:4,color:"#f7709f"}}>{Math.round(mx.c)}C</span>
+                      <span style={{marginLeft:4,color:"#ff8463"}}>{Math.round(mx.f)}F</span>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <input type="range" min={5} max={500} step={5} value={portionG}
+                      onChange={e=>setIngPortions(prev=>({...prev,[ing.id]:+e.target.value}))}
+                      style={{flex:1,accentColor:"#2D5A27",cursor:"pointer",height:4}}/>
+                    <span style={{fontSize:11,color:"var(--color-text-secondary)",minWidth:34,textAlign:"right"}}>{portionG}g</span>
+                  </div>
+                </div>
+              );
+            })}
             <h3 style={{fontSize:13,fontWeight:500,margin:"20px 0 12px"}}>Method</h3>
             {(()=>{let n=0;return method.map((step,i)=>{const isSec=/^\[.+\]$/.test(step.trim());if(isSec)return(<div key={i} style={{fontSize:11,fontWeight:600,color:tk.tealText,margin:"14px 0 6px",textTransform:"uppercase",letterSpacing:"0.05em"}}>{step.replace(/^\[|\]$/g,'')}</div>);n++;return(<div key={i} style={{display:"flex",gap:10,marginBottom:10,fontSize:12}}><span style={{width:20,height:20,borderRadius:"50%",background:tk.tealSurf,color:tk.tealText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,flexShrink:0}}>{n}</span><span style={{color:"var(--color-text-secondary)",lineHeight:1.6}}>{step}</span></div>);});})()}
           </div>
@@ -1144,9 +1241,6 @@ export default function BurntCaloriesApp() {
   const [ingCat,setIngCat]    = useState("All");
   const [ingSub,setIngSub]    = useState("All");
   const [ingredients,setIngredients] = useState([]);
-  const [builderIngs,setBuilderIngs] = useState([]);
-  const [builderName,setBuilderName] = useState("");
-  const [builderSearch,setBuilderSearch] = useState("");
   const [clients,setClients] = useState([
     {id:1,name:"Paul Britton",  age:40,weight:90, height:180,gender:"male",  goal:"fat_loss",    activityLevel:"very"},
     {id:2,name:"Alex Carter",   age:34,weight:78, height:175,gender:"male",  goal:"muscle_gain", activityLevel:"moderate"},
@@ -1357,12 +1451,6 @@ export default function BurntCaloriesApp() {
       return mc&&ms&&mt;
     });
   },[ingCat,ingSub,ingSearch]);
-
-  const builderTotals = useMemo(()=>{
-    let cal=0,p=0,c=0,f=0,fi=0;
-    builderIngs.forEach(bi=>{const m=ingMacros(bi);cal+=m.cal;p+=m.p;c+=m.c;f+=m.f;fi+=m.fi;});
-    return {cal:Math.round(cal),p:Math.round(p),c:Math.round(c),f:Math.round(f),fi:Math.round(fi)};
-  },[builderIngs]);
 
   const liveCalcMacros = useMemo(()=>calcMacros(calcDraft),[calcDraft]);
 
@@ -1803,73 +1891,21 @@ export default function BurntCaloriesApp() {
 
   // ── MEAL BUILDER ─────────────────────────────────────────────────────────────
   if(tab==="builder") return (
-    <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
-      {Nav}{wrap(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
-          <div>
-            <Hdr title="Custom meal builder" sub={`Build any meal from ${ingredients.length} ingredients and get instant macro breakdown · Burnt Calories`}/>
-            <div style={crd}>
-              <div style={{marginBottom:14}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Meal name</label><input value={builderName} onChange={e=>setBuilderName(e.target.value)} placeholder="e.g. Post-workout bowl" style={{width:"100%",boxSizing:"border-box"}}/></div>
-              <div style={{marginBottom:12}}><label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:5}}>Find ingredient</label><input value={builderSearch} onChange={e=>setBuilderSearch(e.target.value)} placeholder="Type name, category or subcategory…" style={{width:"100%",boxSizing:"border-box"}}/></div>
-              <div style={{maxHeight:300,overflowY:"auto",border:tk.bd,borderRadius:tk.r}}>
-                {ingredients.filter(i=>{if(!builderSearch)return true;const q=builderSearch.toLowerCase();return(i.name||'').toLowerCase().includes(q)||(i.sub||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q);}).slice(0,50).map(ing=>(
-                  <div key={ing.id} onClick={()=>{if(!builderIngs.find(b=>b.id===ing.id))setBuilderIngs(b=>[...b,{id:ing.id,amt:100}]);}} style={{padding:"9px 14px",borderBottom:tk.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}
-                    onMouseEnter={e=>e.currentTarget.style.background="var(--color-background-secondary)"}
-                    onMouseLeave={e=>e.currentTarget.style.background=""}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:500}}>{ing.name}</span><CatBadge cat={ing.cat}/></div>
-                    <span style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{ing.cal} kcal/{ing.ref}g</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div style={{position:"sticky",top:80}}>
-            <div style={crd}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <h2 style={{fontSize:14,fontWeight:500,margin:0}}>{builderName||"New meal"}</h2>
-                {builderIngs.length>0&&<button onClick={()=>{setBuilderIngs([]);setBuilderName("");}} style={{fontSize:11,padding:"4px 10px",cursor:"pointer"}}>Clear all</button>}
-              </div>
-              {builderIngs.length===0?(
-                <div style={{textAlign:"center",padding:"32px 0",color:"var(--color-text-tertiary)",fontSize:12}}>Select ingredients from the left panel</div>
-              ):(
-                <>
-                  {builderIngs.map(bi=>{
-                    const ing=BASE_ING.find(i=>i.id===bi.id);
-                    if(!ing) return null;
-                    const m=ingMacros(bi);
-                    return (
-                      <div key={bi.id} style={{marginBottom:14,paddingBottom:14,borderBottom:tk.bd}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                          <span style={{fontSize:12,fontWeight:500}}>{ing.name}</span>
-                          <button onClick={()=>setBuilderIngs(b=>b.filter(x=>x.id!==bi.id))} style={{fontSize:10,padding:"2px 8px",color:tk.red,cursor:"pointer"}}>✕</button>
-                        </div>
-                        <div style={{display:"flex",alignItems:"center",gap:10}}>
-                          <input type="range" min={5} max={500} step={5} value={bi.amt} onChange={e=>setBuilderIngs(b=>b.map(x=>x.id===bi.id?{...x,amt:+e.target.value}:x))} style={{flex:1}}/>
-                          <span style={{fontSize:11,minWidth:36,color:"var(--color-text-secondary)",textAlign:"right"}}>{bi.amt}g</span>
-                          <span style={{fontSize:11,color:tk.teal,minWidth:52,textAlign:"right"}}>{Math.round(m.cal)} kcal</span>
-                        </div>
-                        <div style={{fontSize:10,color:"var(--color-text-tertiary)",marginTop:4}}>{ing.benefits[0]}</div>
-                      </div>
-                    );
-                  })}
-                  <div style={{paddingTop:4}}>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4,textAlign:"center",marginBottom:12}}>
-                      {[["Cal",builderTotals.cal,tk.teal],["P",builderTotals.p+"g",tk.blue],["C",builderTotals.c+"g",tk.green],["F",builderTotals.f+"g",tk.coral],["Fibre",builderTotals.fi+"g",tk.gray]].map(([l,v,c])=>(
-                        <div key={l}><div style={{fontSize:16,fontWeight:500,color:c}}>{v}</div><div style={{fontSize:9,color:"var(--color-text-tertiary)"}}>{l}</div></div>
-                      ))}
-                    </div>
-                    <div style={{height:4,borderRadius:2,background:"var(--color-background-secondary)",overflow:"hidden",display:"flex"}}>
-                      {[[builderTotals.p*4,tk.blue],[builderTotals.c*4,tk.green],[builderTotals.f*9,tk.coral]].map(([kcal,col],i)=>(
-                        <div key={i} style={{width:builderTotals.cal>0?Math.round(kcal/builderTotals.cal*100)+"%":"0%",height:"100%",background:col}}/>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+    <div style={{minHeight:"100vh"}}>
+      {Nav}
+      <MealBuilderTab
+        recipes={recipes}
+        ingredients={ingredients}
+        onRecipeAdded={(newRecipe)=>{
+          setRecipes(prev=>[...prev,{
+            ...newRecipe,
+            ings:  parseArr(newRecipe.ings),
+            tags:  parseArr(newRecipe.tags),
+            method:parseArr(newRecipe.method),
+            goal:  parseArr(newRecipe.goal),
+          }]);
+        }}
+      />
     </div>
   );
 
