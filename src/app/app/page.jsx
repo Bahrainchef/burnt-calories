@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import MealBuilderTab from "./MealBuilderTab";
+import QuickRecipeBuilder from "./QuickRecipeBuilder";
 
 const parseArr = (f) => {
   if (Array.isArray(f)) return f
@@ -1905,6 +1906,19 @@ export default function BurntCaloriesApp() {
             goal:  parseArr(newRecipe.goal),
           }]);
         }}
+      />
+      <QuickRecipeBuilder
+        ingredients={ingredients}
+        onSaved={(newRecipe)=>{
+          setRecipes(prev=>[...prev,{
+            ...newRecipe,
+            ings:  parseArr(newRecipe.ings),
+            tags:  parseArr(newRecipe.tags),
+            method:parseArr(newRecipe.method),
+            goal:  parseArr(newRecipe.goal),
+          }]);
+        }}
+        onViewRecipes={()=>setTab('recipes')}
       />
     </div>
   );
