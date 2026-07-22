@@ -212,7 +212,7 @@ function MacroPanel({ totals, target, setTarget, saved, onAutoFit, onSave }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 78 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ background: C.dark, color: "#fff", borderRadius: 24, padding: 20 }}>
         <h2 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#c7ccd6" }}>Meal totals</h2>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
@@ -480,7 +480,7 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
     ? { display: "flex", flexDirection: "column", gap: 16 }
     : {
         display: "grid",
-        gridTemplateColumns: "minmax(480px,2.2fr) minmax(300px,1.3fr) clamp(260px,22vw,300px)",
+        gridTemplateColumns: "2fr 3fr",
         gap: 16,
         alignItems: "start",
       }
@@ -507,7 +507,83 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
       <div style={{ maxWidth: 1420, margin: "0 auto", padding: "20px 20px 0" }}>
         <div style={gridStyle}>
 
-          {/* ── Column A: 5-column ingredient board ── */}
+          {/* ── LEFT: drop zone + totals + targets ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* My meal drop zone */}
+            <div
+              ref={dropRef}
+              style={{
+                ...cardBase, borderRadius: 24, padding: 18,
+                minHeight: 300,
+                transition: "transform .18s,box-shadow .18s,background .18s",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <input
+                  value={mealName}
+                  onChange={e => setMealName(e.target.value)}
+                  style={{
+                    border: "none", background: "transparent",
+                    fontWeight: 800, fontSize: 22, flex: 1, minWidth: 0,
+                    color: C.ink, letterSpacing: "-.01em",
+                  }}
+                />
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  <span style={{ fontSize: 12, color: C.sub }}>
+                    {rows.length} {rows.length === 1 ? "ingredient" : "ingredients"}
+                  </span>
+                  {rows.length > 0 && (
+                    <button
+                      onClick={() => setRows([])}
+                      style={{
+                        fontSize: 11, padding: "4px 10px", cursor: "pointer",
+                        border: `1px solid ${C.line}`, borderRadius: 8,
+                        background: C.surface, color: C.sub,
+                      }}
+                    >Clear</button>
+                  )}
+                </div>
+              </div>
+
+              {rows.length === 0 ? (
+                <div style={{
+                  border: "2px dashed #d4d7df", borderRadius: 18, minHeight: 200,
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  justifyContent: "center", gap: 10, color: "#9aa0ab",
+                }}>
+                  <span style={{ fontSize: 38 }}>🍳</span>
+                  <span style={{ fontWeight: 700, fontSize: 17, color: "#6b7280" }}>
+                    Click or drag ingredients from the columns
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {rows.map(row => (
+                    <IngredientDropRow
+                      key={row.rowId}
+                      row={row}
+                      ingredients={ingredients}
+                      onGramsChange={setGrams}
+                      onRemove={removeRow}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Meal totals + Tune to target + Save */}
+            <MacroPanel
+              totals={totals}
+              target={target}
+              setTarget={setTarget}
+              saved={saved}
+              onAutoFit={autoFit}
+              onSave={saveMeal}
+            />
+          </div>
+
+          {/* ── RIGHT: 5-column ingredient board ── */}
           <section style={{ ...cardBase, padding: 16, display: "flex", flexDirection: "column" }}>
             {/* Search bar */}
             <div style={{
@@ -530,10 +606,10 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
               )}
             </div>
 
-            {/* 5 ingredient columns */}
+            {/* 5 ingredient columns — min 120px each so names don't wrap */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: narrow ? '1fr 1fr' : '1.3fr 1fr 1fr 1fr 1fr',
+              gridTemplateColumns: narrow ? '1fr 1fr' : 'minmax(120px,1.3fr) repeat(4, minmax(120px,1fr))',
               gap: 10,
               alignItems: 'start',
             }}>
@@ -546,7 +622,7 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
                   }}>
                     {col.label}
                   </div>
-                  <div className="mb-ing-col" style={{ maxHeight: 640, overflowY: 'auto', paddingRight: 2 }}>
+                  <div className="mb-ing-col" style={{ maxHeight: 72 + 'vh', overflowY: 'auto', paddingRight: 2 }}>
                     {col.placeholder
                       ? PLACEHOLDER_TABS.map((name, i) => (
                           <PlaceholderTab
@@ -585,82 +661,6 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
               ))}
             </div>
           </section>
-
-          {/* ── Column B: Meal board (drop zone) ── */}
-          <section>
-            <div
-              ref={dropRef}
-              style={{
-                ...cardBase, borderRadius: 24, padding: 18,
-                minHeight: 500,
-                transition: "transform .18s,box-shadow .18s,background .18s",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <input
-                  value={mealName}
-                  onChange={e => setMealName(e.target.value)}
-                  style={{
-                    border: "none", background: "transparent",
-                    fontWeight: 800, fontSize: 22, flex: 1, minWidth: 0,
-                    color: C.ink, letterSpacing: "-.01em",
-                  }}
-                />
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                  <span style={{ fontSize: 12, color: C.sub }}>
-                    {rows.length} {rows.length === 1 ? "ingredient" : "ingredients"}
-                  </span>
-                  {rows.length > 0 && (
-                    <button
-                      onClick={() => setRows([])}
-                      style={{
-                        fontSize: 11, padding: "4px 10px", cursor: "pointer",
-                        border: `1px solid ${C.line}`, borderRadius: 8,
-                        background: C.surface, color: C.sub,
-                      }}
-                    >Clear</button>
-                  )}
-                </div>
-              </div>
-
-              {rows.length === 0 ? (
-                <div style={{
-                  border: "2px dashed #d4d7df", borderRadius: 18, minHeight: 360,
-                  display: "flex", flexDirection: "column", alignItems: "center",
-                  justifyContent: "center", gap: 10, color: "#9aa0ab",
-                }}>
-                  <span style={{ fontSize: 38 }}>🍳</span>
-                  <span style={{ fontWeight: 700, fontSize: 17, color: "#6b7280" }}>
-                    Click or drag ingredients from the columns
-                  </span>
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {rows.map(row => (
-                    <IngredientDropRow
-                      key={row.rowId}
-                      row={row}
-                      ingredients={ingredients}
-                      onGramsChange={setGrams}
-                      onRemove={removeRow}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* ── Column C: Macros panel (sticky) ── */}
-          <aside>
-            <MacroPanel
-              totals={totals}
-              target={target}
-              setTarget={setTarget}
-              saved={saved}
-              onAutoFit={autoFit}
-              onSave={saveMeal}
-            />
-          </aside>
         </div>
       </div>
 
