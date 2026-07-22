@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import { supabase } from "@/lib/supabase"
 
 const C = {
   bg:        "#eef0f4",
@@ -199,8 +200,142 @@ function IngredientDropRow({ row, ingredients, onGramsChange, onRemove }) {
   )
 }
 
+// ── SaveModal ─────────────────────────────────────────────────────────────
+function SaveModal({ rows, onClose, onSuccess }) {
+  const [name,   setName]   = useState('')
+  const [cat,    setCat]    = useState('')
+  const [serves, setServes] = useState(1)
+  const [prep,   setPrep]   = useState(0)
+  const [cats,   setCats]   = useState([])
+  const [saving, setSaving] = useState(false)
+  const [err,    setErr]    = useState(null)
+
+  useEffect(() => {
+    supabase.from('recipes').select('cat').then(({ data }) => {
+      if (data) {
+        const unique = [...new Set(data.map(r => r.cat).filter(Boolean))].sort()
+        setCats(unique)
+        if (unique.length) setCat(unique[0])
+      }
+    })
+  }, [])
+
+  const save = async () => {
+    if (!name.trim()) { setErr('Recipe name is required'); return }
+    if (!cat)         { setErr('Please select a category'); return }
+    setSaving(true); setErr(null)
+    const ings = rows.filter(r => r.ingId).map(r => ({ id: r.ingId, amt: r.grams }))
+    const { error } = await supabase.from('recipes').insert({
+      name: name.trim(), cat, serves, prep,
+      ings, custom: true, goal: [], tags: [], method: [], photo_url: null,
+    })
+    setSaving(false)
+    if (error) { setErr(error.message); return }
+    onSuccess(cat)
+  }
+
+  const field = {
+    width: '100%', border: `1px solid ${C.line}`, borderRadius: 10,
+    padding: '9px 12px', fontSize: 13, color: C.ink, outline: 'none',
+    background: '#f9fafc', boxSizing: 'border-box',
+  }
+  const label = { fontSize: 11, fontWeight: 700, color: C.sub, display: 'block', marginBottom: 5 }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 20,
+    }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{
+        background: '#fff', borderRadius: 20, padding: 28,
+        width: '100%', maxWidth: 440,
+        boxShadow: '0 32px 64px -24px rgba(0,0,0,0.4)',
+      }}>
+        <div style={{ fontWeight: 800, fontSize: 18, color: C.ink, marginBottom: 22 }}>
+          Save recipe
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <span style={label}>Recipe name *</span>
+          <input
+            autoFocus
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && save()}
+            placeholder="e.g. Post-workout chicken bowl"
+            style={field}
+          />
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <span style={label}>Category</span>
+          <select value={cat} onChange={e => setCat(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+            {cats.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+          <div>
+            <span style={label}>Serves</span>
+            <input type="number" min={1} max={20} value={serves}
+              onChange={e => setServes(Math.max(1, +e.target.value))} style={field} />
+          </div>
+          <div>
+            <span style={label}>Prep time (min)</span>
+            <input type="number" min={0} max={240} value={prep}
+              onChange={e => setPrep(Math.max(0, +e.target.value))} style={field} />
+          </div>
+        </div>
+
+        {err && (
+          <div style={{ fontSize: 12, color: '#e53e3e', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>
+            {err}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose} style={{
+            flex: 1, border: `1px solid ${C.line}`, background: C.surface,
+            borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 13,
+            cursor: 'pointer', color: C.ink,
+          }}>
+            Cancel
+          </button>
+          <button onClick={save} disabled={saving} style={{
+            flex: 2, border: 'none', background: saving ? '#c4814e' : C.cta, color: '#fff',
+            borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 13,
+            cursor: saving ? 'default' : 'pointer',
+            boxShadow: saving ? 'none' : '0 10px 22px -10px rgba(232,98,26,.65)',
+            transition: 'background .15s',
+          }}>
+            {saving ? 'Saving…' : 'Save recipe'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function Toast({ msg }) {
+  if (!msg) return null
+  return (
+    <div style={{
+      position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 300, background: C.primary, color: '#fff',
+      borderRadius: 12, padding: '12px 22px', fontWeight: 700, fontSize: 14,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.22)', whiteSpace: 'nowrap',
+      animation: 'mbRowIn .3s ease',
+    }}>
+      {msg}
+    </div>
+  )
+}
+
 // ── MacroPanel ────────────────────────────────────────────────────────────
-function MacroPanel({ totals, target, setTarget, saved, onAutoFit, onSave }) {
+function MacroPanel({ totals, target, setTarget, onAutoFit, onSave }) {
   const kcalPct    = target.kcal ? Math.min(1, totals.kcal / target.kcal) : 0
   const kcalOffset = CIRC * (1 - kcalPct)
   const proteinPct = target.protein ? Math.min(100, Math.round((totals.protein / target.protein) * 100)) : 0
@@ -297,30 +432,6 @@ function MacroPanel({ totals, target, setTarget, saved, onAutoFit, onSave }) {
         </button>
       </div>
 
-      <div style={{ ...card, padding: "14px 16px" }}>
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: C.ink }}>Saved meals</div>
-        {saved.length === 0
-          ? <div style={{ fontSize: 12, color: C.sub, textAlign: "center", padding: "12px 0" }}>No saved meals yet</div>
-          : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {saved.map((m, i) => (
-                <div key={i} style={{
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  background: "#f3f4f7", border: `1px solid ${C.line}`,
-                  borderRadius: 12, padding: "9px 12px",
-                }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{m.name}</div>
-                    <div style={{ fontSize: 11, color: C.sub }}>{m.count} {m.count === 1 ? "ingredient" : "ingredients"}</div>
-                  </div>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>
-                    {m.kcal}<small style={{ color: "#9aa0ab", fontWeight: 400 }}> kcal</small>
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-      </div>
     </div>
   )
 }
@@ -344,12 +455,13 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
 
   // Board rows: [{ rowId, ingId, name?, grams }]
   // ingId is null for placeholder (dressing/sauce) items
-  const [rows,      setRows]      = useState([])
-  const [mealName,  setMealName]  = useState("My meal")
-  const [target,    setTarget]    = useState({ kcal: 700, protein: 55 })
-  const [saved,     setSaved]     = useState([])
-  const [ingSearch, setIngSearch] = useState('')
-  const [dragName,  setDragName]  = useState(null)
+  const [rows,          setRows]          = useState([])
+  const [mealName,      setMealName]      = useState("My meal")
+  const [target,        setTarget]        = useState({ kcal: 700, protein: 55 })
+  const [ingSearch,     setIngSearch]     = useState('')
+  const [dragName,      setDragName]      = useState(null)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [toast,         setToast]         = useState(null)
 
   // Usage counts — persisted to localStorage as { [ingId]: count }
   const [usage, setUsage] = useState(() => {
@@ -490,11 +602,15 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
 
   const saveMeal = () => {
     if (!rows.length) return
-    setSaved(prev => [{
-      name:  mealName || "Untitled meal",
-      kcal:  totals.kcal,
-      count: rows.length,
-    }, ...prev].slice(0, 5))
+    setShowSaveModal(true)
+  }
+
+  const handleSaveSuccess = (cat) => {
+    setShowSaveModal(false)
+    setRows([])
+    setMealName("My meal")
+    setToast(`✓ Recipe saved to ${cat}`)
+    setTimeout(() => setToast(null), 3000)
   }
 
   // Responsive breakpoint
@@ -606,22 +722,28 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
               totals={totals}
               target={target}
               setTarget={setTarget}
-              saved={saved}
               onAutoFit={autoFit}
               onSave={saveMeal}
             />
-            {Object.keys(usage).length > 0 && (
-              <button
-                onClick={resetUsage}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: 11, color: C.sub, padding: '4px 0',
-                  textDecoration: 'underline', alignSelf: 'flex-start',
-                }}
-              >
-                Reset favourites
-              </button>
-            )}
+
+            {/* Reset favourites — barely visible, appears on hover */}
+            <div style={{ minHeight: 22 }}>
+              {Object.keys(usage).length > 0 && (
+                <button
+                  onClick={resetUsage}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 10, color: 'transparent', padding: '4px 0',
+                    textDecoration: 'underline', alignSelf: 'flex-start',
+                    transition: 'color .2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = C.sub }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'transparent' }}
+                >
+                  Reset favourites
+                </button>
+              )}
+            </div>
           </div>
 
           {/* ── RIGHT: 5-column ingredient board ── */}
@@ -707,6 +829,16 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
       </div>
 
       <DragGhost name={dragName} ghostRef={ghostRef} />
+
+      {showSaveModal && (
+        <SaveModal
+          rows={rows}
+          onClose={() => setShowSaveModal(false)}
+          onSuccess={handleSaveSuccess}
+        />
+      )}
+
+      <Toast msg={toast} />
     </div>
   )
 }
