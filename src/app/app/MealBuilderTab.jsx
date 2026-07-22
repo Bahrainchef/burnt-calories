@@ -71,9 +71,10 @@ function DragGhost({ name, ghostRef }) {
 }
 
 // ── IngredientTab ─────────────────────────────────────────────────────────
-function IngredientTab({ ing, col, onPointerDown, isMatch, hasSearch }) {
+function IngredientTab({ ing, col, onPointerDown, isMatch, hasSearch, usageCount }) {
   const m = ingMacros(ing, 100)
   const dimmed = hasSearch && !isMatch
+  const isFav  = usageCount >= 3
   return (
     <div
       onPointerDown={onPointerDown}
@@ -85,17 +86,18 @@ function IngredientTab({ ing, col, onPointerDown, isMatch, hasSearch }) {
         cursor:        dimmed ? 'default' : 'grab',
         touchAction:   'none',
         userSelect:    'none',
-        boxShadow:     '0 1px 3px rgba(40,44,55,.07)',
+        boxShadow:     isFav ? `0 1px 3px rgba(40,44,55,.07), inset 0 0 0 1px ${col.accent}44` : '0 1px 3px rgba(40,44,55,.07)',
         opacity:       dimmed ? 0.3 : 1,
         transition:    'opacity .15s, transform .15s, box-shadow .15s',
         marginBottom:  6,
         pointerEvents: dimmed ? 'none' : 'auto',
       }}
       onMouseEnter={e => { if (!dimmed) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(40,44,55,.14)' } }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(40,44,55,.07)' }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = isFav ? `0 1px 3px rgba(40,44,55,.07), inset 0 0 0 1px ${col.accent}44` : '0 1px 3px rgba(40,44,55,.07)' }}
     >
-      <div style={{ fontWeight: 700, fontSize: 12, color: C.ink, lineHeight: 1.3, marginBottom: 2 }}>
-        {ing.name}
+      <div style={{ fontWeight: 700, fontSize: 12, color: C.ink, lineHeight: 1.3, marginBottom: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{ing.name}</span>
+        {isFav && <span style={{ fontSize: 9, lineHeight: 1, flexShrink: 0, marginLeft: 4 }}>⭐</span>}
       </div>
       <div style={{ fontSize: 10, color: C.sub }}>
         <span style={{ color: col.accent, fontWeight: 700 }}>{Math.round(m.cal)}</span>
@@ -349,17 +351,39 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
   const [ingSearch, setIngSearch] = useState('')
   const [dragName,  setDragName]  = useState(null)
 
+  // Usage counts — persisted to localStorage as { [ingId]: count }
+  const [usage, setUsage] = useState(() => {
+    if (typeof window === 'undefined') return {}
+    try { return JSON.parse(localStorage.getItem('mb_ingredient_usage') || '{}') }
+    catch { return {} }
+  })
+
+  const resetUsage = () => {
+    try { localStorage.removeItem('mb_ingredient_usage') } catch {}
+    setUsage({})
+  }
+
   const dragRef  = useRef(null)
   const ghostRef = useRef(null)
   const dropRef  = useRef(null)
 
-  // Column data
+  // Column data — sorted by usage desc, then alphabetical within equal counts
   const colData = useMemo(() =>
     COLS.map(col => ({
       ...col,
-      items: col.placeholder ? [] : ingredients.filter(col.filter),
+      items: col.placeholder
+        ? []
+        : ingredients
+            .filter(col.filter)
+            .slice()
+            .sort((a, b) => {
+              const ca = usage[a.id] || 0
+              const cb = usage[b.id] || 0
+              if (cb !== ca) return cb - ca
+              return (a.name || '').localeCompare(b.name || '')
+            }),
     })),
-  [ingredients])
+  [ingredients, usage])
 
   // Ingredient IDs that match the search query
   const matchIds = useMemo(() => {
@@ -399,6 +423,11 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
       setRows(prev => [...prev, { rowId: rowIdRef.current, ingId: null, name: item.name, grams: 100 }])
     } else {
       setRows(prev => [...prev, { rowId: rowIdRef.current, ingId: item.id, name: null, grams: item.ref || 100 }])
+      setUsage(prev => {
+        const next = { ...prev, [item.id]: (prev[item.id] || 0) + 1 }
+        try { localStorage.setItem('mb_ingredient_usage', JSON.stringify(next)) } catch {}
+        return next
+      })
     }
   }, [])
 
@@ -581,6 +610,18 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
               onAutoFit={autoFit}
               onSave={saveMeal}
             />
+            {Object.keys(usage).length > 0 && (
+              <button
+                onClick={resetUsage}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 11, color: C.sub, padding: '4px 0',
+                  textDecoration: 'underline', alignSelf: 'flex-start',
+                }}
+              >
+                Reset favourites
+              </button>
+            )}
           </div>
 
           {/* ── RIGHT: 5-column ingredient board ── */}
@@ -645,6 +686,7 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
                             col={col}
                             isMatch={matchIds ? matchIds.has(ing.id) : true}
                             hasSearch={!!ingSearch}
+                            usageCount={usage[ing.id] || 0}
                             onPointerDown={e => {
                               if (matchIds && !matchIds.has(ing.id)) return
                               e.preventDefault()
