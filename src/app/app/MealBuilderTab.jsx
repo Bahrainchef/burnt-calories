@@ -30,6 +30,26 @@ const COLS = [
   { id: 'dressings',  label: 'Dressings · Sauces · Marinades · Pickles', accent: '#7F77DD', accentLight: '#EEEDFE', filter: null, placeholder: true           },
 ]
 
+// Maps the user-facing section label → the cat + tags values stored in Supabase.
+// Keeps the modal dropdown aligned with what the Recipes tab actually shows.
+const RECIPE_SECTIONS = [
+  { label: 'High Performance',  cat: 'Lunch',     tags: ['High Performance'] },
+  { label: 'Salads',            cat: 'Lunch',     tags: ['Salad']            },
+  { label: 'Chicken',           cat: 'Lunch',     tags: ['Chicken']          },
+  { label: 'Fish & Seafood',    cat: 'Dinner',    tags: ['Omega-3']          },
+  { label: 'Grills & Platters', cat: 'Dinner',    tags: ['Grills & Platters']},
+  { label: 'Breakfast',         cat: 'Breakfast', tags: ['Breakfast']        },
+  { label: 'Lunch',             cat: 'Lunch',     tags: []                   },
+  { label: 'Dinner',            cat: 'Dinner',    tags: []                   },
+  { label: 'Snack',             cat: 'Snack',     tags: []                   },
+  { label: 'Soups & Broths',    cat: 'Lunch',     tags: ['Bone Broth']       },
+  { label: 'Plant Based',       cat: 'Dinner',    tags: ['Plant Based']      },
+  { label: 'Pasta & Rice',      cat: 'Dinner',    tags: ['Pasta & Rice']     },
+  { label: 'Dips & Sides',      cat: 'Lunch',     tags: ['Dips & Sides']     },
+  { label: 'Meal Prep',         cat: 'Lunch',     tags: ['Meal Prep']        },
+  { label: 'Low Calorie',       cat: 'Dinner',    tags: []                   },
+]
+
 const PLACEHOLDER_TABS = [
   "Classic French Dressing",
   "Asian Sesame Dressing",
@@ -202,36 +222,35 @@ function IngredientDropRow({ row, ingredients, onGramsChange, onRemove }) {
 
 // ── SaveModal ─────────────────────────────────────────────────────────────
 function SaveModal({ rows, onClose, onSuccess }) {
-  const [name,   setName]   = useState('')
-  const [cat,    setCat]    = useState('')
-  const [serves, setServes] = useState(1)
-  const [prep,   setPrep]   = useState(0)
-  const [cats,   setCats]   = useState([])
-  const [saving, setSaving] = useState(false)
-  const [err,    setErr]    = useState(null)
-
-  useEffect(() => {
-    supabase.from('recipes').select('cat').then(({ data }) => {
-      if (data) {
-        const unique = [...new Set(data.map(r => r.cat).filter(Boolean))].sort()
-        setCats(unique)
-        if (unique.length) setCat(unique[0])
-      }
-    })
-  }, [])
+  const [name,    setName]    = useState('')
+  const [section, setSection] = useState(RECIPE_SECTIONS[0].label)
+  const [serves,  setServes]  = useState(1)
+  const [prep,    setPrep]    = useState(0)
+  const [saving,  setSaving]  = useState(false)
+  const [err,     setErr]     = useState(null)
 
   const save = async () => {
     if (!name.trim()) { setErr('Recipe name is required'); return }
-    if (!cat)         { setErr('Please select a category'); return }
     setSaving(true); setErr(null)
+    const sec  = RECIPE_SECTIONS.find(s => s.label === section) || RECIPE_SECTIONS[0]
     const ings = rows.filter(r => r.ingId).map(r => ({ id: r.ingId, amt: r.grams }))
-    const { error } = await supabase.from('recipes').insert({
-      name: name.trim(), cat, serves, prep,
-      ings, custom: true, goal: [], tags: [], method: [], photo_url: null,
-    })
+    const { data, error } = await supabase.from('recipes').insert({
+      name: name.trim(),
+      cat:  sec.cat,
+      serves, prep,
+      cook: 0,
+      ings,
+      custom:    true,
+      goal:      [],
+      tags:      sec.tags,
+      method:    [],
+      photo_url: null,
+      emoji:     '🍽️',
+      desc:      '',
+    }).select().single()
     setSaving(false)
     if (error) { setErr(error.message); return }
-    onSuccess(cat)
+    onSuccess(data, section)
   }
 
   const field = {
@@ -270,9 +289,9 @@ function SaveModal({ rows, onClose, onSuccess }) {
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <span style={label}>Category</span>
-          <select value={cat} onChange={e => setCat(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
-            {cats.map(c => <option key={c} value={c}>{c}</option>)}
+          <span style={label}>Section</span>
+          <select value={section} onChange={e => setSection(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+            {RECIPE_SECTIONS.map(s => <option key={s.label} value={s.label}>{s.label}</option>)}
           </select>
         </div>
 
@@ -605,12 +624,13 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
     setShowSaveModal(true)
   }
 
-  const handleSaveSuccess = (cat) => {
+  const handleSaveSuccess = (insertedRecord, sectionLabel) => {
     setShowSaveModal(false)
     setRows([])
     setMealName("My meal")
-    setToast(`✓ Recipe saved to ${cat}`)
+    setToast(`✓ Recipe saved to ${sectionLabel}`)
     setTimeout(() => setToast(null), 3000)
+    if (typeof onRecipeAdded === 'function') onRecipeAdded(insertedRecord)
   }
 
   // Responsive breakpoint
