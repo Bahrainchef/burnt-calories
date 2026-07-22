@@ -384,12 +384,12 @@ export default function QuickRecipeBuilder({ ingredients = [], onSaved, onViewRe
     try {
       const { data, error } = await supabase.from('recipes').insert(payload).select().single()
       if (error) throw error
-      setToast(`Recipe saved to ${recCat}`)
       if (onSaved) onSaved(data)
       setRows([])
       setRecipeName('')
       setServes(1)
       setPrepTime(0)
+      if (onViewRecipes) onViewRecipes()
     } catch (e) {
       setSaveErr('Save failed: ' + (e.message || 'unknown'))
     } finally {
