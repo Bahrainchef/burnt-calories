@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
+import { useIngredientPhoto } from "./useIngredientPhoto"
 
 const C = {
   bg:        "#eef0f4",
@@ -22,16 +23,14 @@ const C = {
 
 const CIRC = 2 * Math.PI * 54
 
-const COLS = [
-  { id: 'protein',    label: 'Proteins',                                 accent: '#C4530A', accentLight: '#FFF0E8', filter: (i) => i.cat === 'Protein',      wider: true },
-  { id: 'carbs',      label: 'Carbs & Starches',                         accent: '#C47C0A', accentLight: '#FDF3DC', filter: (i) => i.cat === 'Carbohydrate' },
-  { id: 'vegetables', label: 'Vegetables',                                accent: '#2D5A27', accentLight: '#EAF3E6', filter: (i) => i.cat === 'Vegetable'    },
-  { id: 'fruits',     label: 'Fruits',                                    accent: '#C0446A', accentLight: '#FDEEF4', filter: (i) => i.cat === 'Fruit'        },
-  { id: 'dressings',  label: 'Dressings · Sauces · Marinades · Pickles', accent: '#7F77DD', accentLight: '#EEEDFE', filter: null, placeholder: true           },
+const ING_TABS = [
+  { id: 'protein',    label: 'Proteins',              emoji: '🥩', filter: i => i.cat === 'Protein',      cols: 3, accent: '#C4530A', accentLight: '#FFF0E8' },
+  { id: 'carbs',      label: 'Carbs & Starches',      emoji: '🌾', filter: i => i.cat === 'Carbohydrate', cols: 4, accent: '#C47C0A', accentLight: '#FDF3DC' },
+  { id: 'vegetables', label: 'Vegetables',             emoji: '🥦', filter: i => i.cat === 'Vegetable',    cols: 5, accent: '#2D5A27', accentLight: '#EAF3E6' },
+  { id: 'fruits',     label: 'Fruits',                emoji: '🍓', filter: i => i.cat === 'Fruit',        cols: 4, accent: '#C0446A', accentLight: '#FDEEF4' },
+  { id: 'dressings',  label: 'Dressings · Sauces · Marinades · Pickles', emoji: '🫙', filter: null, placeholder: true, cols: 3, accent: '#7F77DD', accentLight: '#EEEDFE' },
 ]
 
-// Maps the user-facing section label → the cat + tags values stored in Supabase.
-// Keeps the modal dropdown aligned with what the Recipes tab actually shows.
 const RECIPE_SECTIONS = [
   { label: 'High Performance',  cat: 'Lunch',     tags: ['High Performance'] },
   { label: 'Salads',            cat: 'Lunch',     tags: ['Salad']            },
@@ -67,7 +66,7 @@ function ingMacros(ing, amt) {
   return { cal: ing.cal * r, p: ing.p * r, c: ing.c * r, f: ing.f * r, fi: (ing.fi || 0) * r }
 }
 
-// ── DragGhost ─────────────────────────────────────────────────────────────
+// ── DragGhost ─────────────────────────────────────────────────────────────────
 function DragGhost({ name, ghostRef }) {
   return (
     <div ref={ghostRef} style={{
@@ -91,79 +90,87 @@ function DragGhost({ name, ghostRef }) {
   )
 }
 
-// ── IngredientTab ─────────────────────────────────────────────────────────
-function IngredientTab({ ing, col, onPointerDown, isMatch, hasSearch, usageCount }) {
-  const m = ingMacros(ing, 100)
+// ── IngPhotoCard ──────────────────────────────────────────────────────────────
+function IngPhotoCard({ ing, tab, onAdd, isMatch, hasSearch }) {
+  const photoUrl = useIngredientPhoto(ing.name)
+  const [animating, setAnimating] = useState(false)
   const dimmed = hasSearch && !isMatch
-  const isFav  = usageCount >= 3
+  const cal = Math.round((ing.cal || 0) * (100 / (ing.ref || 100)))
+  const initial = (ing.name || '?')[0].toUpperCase()
+
+  const handleClick = () => {
+    if (dimmed) return
+    setAnimating(true)
+    setTimeout(() => setAnimating(false), 280)
+    onAdd(ing)
+  }
+
   return (
     <div
-      onPointerDown={onPointerDown}
+      onClick={handleClick}
       style={{
-        background:    dimmed ? '#f7f8fa' : col.accentLight,
-        borderLeft:    `3px solid ${dimmed ? '#d4d7df' : col.accent}`,
-        borderRadius:  10,
-        padding:       '8px 9px',
-        cursor:        dimmed ? 'default' : 'grab',
-        touchAction:   'none',
-        userSelect:    'none',
-        boxShadow:     isFav ? `0 1px 3px rgba(40,44,55,.07), inset 0 0 0 1px ${col.accent}44` : '0 1px 3px rgba(40,44,55,.07)',
-        opacity:       dimmed ? 0.3 : 1,
-        transition:    'opacity .15s, transform .15s, box-shadow .15s',
-        marginBottom:  6,
+        cursor: dimmed ? 'default' : 'pointer',
+        borderRadius: 12,
+        overflow: 'hidden',
+        boxShadow: '0 2px 8px rgba(40,44,55,.10)',
+        background: '#fff',
+        transform: animating ? 'scale(0.88)' : 'scale(1)',
+        transition: 'transform 0.22s ease, opacity .15s',
+        userSelect: 'none',
+        opacity: dimmed ? 0.25 : 1,
         pointerEvents: dimmed ? 'none' : 'auto',
       }}
-      onMouseEnter={e => { if (!dimmed) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(40,44,55,.14)' } }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = isFav ? `0 1px 3px rgba(40,44,55,.07), inset 0 0 0 1px ${col.accent}44` : '0 1px 3px rgba(40,44,55,.07)' }}
+      onMouseEnter={e => { if (!dimmed) e.currentTarget.style.boxShadow = '0 4px 16px rgba(40,44,55,.18)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(40,44,55,.10)' }}
     >
-      <div style={{ fontWeight: 700, fontSize: 12, color: C.ink, lineHeight: 1.3, marginBottom: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span>{ing.name}</span>
-        {isFav && <span style={{ fontSize: 9, lineHeight: 1, flexShrink: 0, marginLeft: 4 }}>⭐</span>}
+      {/* Square photo area */}
+      <div style={{ width: '100%', paddingTop: '100%', position: 'relative', overflow: 'hidden', background: tab.accentLight }}>
+        {photoUrl === undefined && (
+          <div style={{ position: 'absolute', inset: 0, animation: 'mbShimmer 1.4s ease-in-out infinite', background: `linear-gradient(90deg,${tab.accentLight} 0%,#f5f6f8 50%,${tab.accentLight} 100%)`, backgroundSize: '200% 100%' }}/>
+        )}
+        {photoUrl && (
+          <img src={photoUrl} alt={ing.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}/>
+        )}
+        {photoUrl === null && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', color: tab.accent, fontWeight: 700, background: tab.accentLight }}>
+            {initial}
+          </div>
+        )}
       </div>
-      <div style={{ fontSize: 10, color: C.sub }}>
-        <span style={{ color: col.accent, fontWeight: 700 }}>{Math.round(m.cal)}</span>
-        {' cal · '}
-        <span style={{ color: '#36cf7c' }}>{Math.round(m.p)}P</span>
-        {' · '}
-        <span style={{ color: '#f7709f' }}>{Math.round(m.c)}C</span>
-        {' · '}
-        <span style={{ color: '#ff8463' }}>{Math.round(m.f)}F</span>
+
+      {/* Name + cal */}
+      <div style={{ padding: '5px 7px 7px' }}>
+        <div style={{ fontWeight: 700, fontSize: 12, color: C.ink, lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {ing.name}
+        </div>
+        <div style={{ fontSize: 11, color: C.sub }}>{cal} cal</div>
       </div>
     </div>
   )
 }
 
-// ── PlaceholderTab (dressings column — draggable whole items) ─────────────
-function PlaceholderTab({ name, onPointerDown }) {
+// ── PlaceholderPhotoCard (dressings — coming soon, not tappable) ──────────────
+function PlaceholderPhotoCard({ name, accent, accentLight }) {
+  const initial = name[0].toUpperCase()
   return (
-    <div
-      onPointerDown={onPointerDown}
-      style={{
-        background:   '#f5f4fc',
-        borderLeft:   '3px solid #c4c0f0',
-        borderRadius: 10,
-        padding:      '8px 10px',
-        marginBottom: 6,
-        cursor:       'grab',
-        touchAction:  'none',
-        userSelect:   'none',
-        fontSize:     11,
-        color:        '#6b67b0',
-        fontWeight:   600,
-        lineHeight:   1.4,
-        boxShadow:    '0 1px 3px rgba(40,44,55,.07)',
-        transition:   'transform .15s, box-shadow .15s',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(40,44,55,.14)' }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(40,44,55,.07)' }}
-    >
-      {name}
-      <div style={{ fontSize: 9, color: '#9a96cc', marginTop: 2 }}>Macros coming soon</div>
+    <div style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(40,44,55,.07)', background: '#fff', position: 'relative', cursor: 'default' }}>
+      <div style={{ width: '100%', paddingTop: '100%', position: 'relative', overflow: 'hidden', background: accentLight }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', color: accent, fontWeight: 700 }}>
+          {initial}
+        </div>
+        {/* Coming soon overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.70)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: '#9a96cc', textTransform: 'uppercase', letterSpacing: '.06em' }}>Coming soon</span>
+        </div>
+      </div>
+      <div style={{ padding: '5px 7px 7px' }}>
+        <div style={{ fontWeight: 600, fontSize: 11, color: '#b8b4e0', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+      </div>
     </div>
   )
 }
 
-// ── IngredientDropRow (ingredient row in the board) ───────────────────────
+// ── IngredientDropRow (ingredient row in the meal board) ───────────────────────
 function IngredientDropRow({ row, ingredients, onGramsChange, onRemove }) {
   const ing = row.ingId ? ingredients.find(i => i.id === row.ingId) : null
   const displayName = ing ? ing.name : (row.name || '?')
@@ -202,9 +209,7 @@ function IngredientDropRow({ row, ingredients, onGramsChange, onRemove }) {
               {m.fi > 0 && <span><b style={{ color: C.fiber }}>Fb</b> {Math.round(m.fi)}g</span>}
             </div>
           ) : (
-            <div style={{ fontSize: 10, color: '#9a96cc', marginTop: 4, fontStyle: 'italic' }}>
-              Macros coming soon
-            </div>
+            <div style={{ fontSize: 10, color: '#9a96cc', marginTop: 4, fontStyle: 'italic' }}>Macros coming soon</div>
           )}
         </div>
         <button
@@ -220,7 +225,7 @@ function IngredientDropRow({ row, ingredients, onGramsChange, onRemove }) {
   )
 }
 
-// ── SaveModal ─────────────────────────────────────────────────────────────
+// ── SaveModal ──────────────────────────────────────────────────────────────────
 function SaveModal({ rows, onClose, onSuccess }) {
   const [name,    setName]    = useState('')
   const [section, setSection] = useState(RECIPE_SECTIONS[0].label)
@@ -272,9 +277,7 @@ function SaveModal({ rows, onClose, onSuccess }) {
         width: '100%', maxWidth: 440,
         boxShadow: '0 32px 64px -24px rgba(0,0,0,0.4)',
       }}>
-        <div style={{ fontWeight: 800, fontSize: 18, color: C.ink, marginBottom: 22 }}>
-          Save recipe
-        </div>
+        <div style={{ fontWeight: 800, fontSize: 18, color: C.ink, marginBottom: 22 }}>Save recipe</div>
 
         <div style={{ marginBottom: 14 }}>
           <span style={label}>Recipe name *</span>
@@ -319,9 +322,7 @@ function SaveModal({ rows, onClose, onSuccess }) {
             flex: 1, border: `1px solid ${C.line}`, background: C.surface,
             borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 13,
             cursor: 'pointer', color: C.ink,
-          }}>
-            Cancel
-          </button>
+          }}>Cancel</button>
           <button onClick={save} disabled={saving} style={{
             flex: 2, border: 'none', background: saving ? '#c4814e' : C.cta, color: '#fff',
             borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 13,
@@ -337,7 +338,7 @@ function SaveModal({ rows, onClose, onSuccess }) {
   )
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────
+// ── Toast ──────────────────────────────────────────────────────────────────────
 function Toast({ msg }) {
   if (!msg) return null
   return (
@@ -353,7 +354,7 @@ function Toast({ msg }) {
   )
 }
 
-// ── MacroPanel ────────────────────────────────────────────────────────────
+// ── MacroPanel ────────────────────────────────────────────────────────────────
 function MacroPanel({ totals, target, setTarget, onAutoFit, onSave }) {
   const kcalPct    = target.kcal ? Math.min(1, totals.kcal / target.kcal) : 0
   const kcalOffset = CIRC * (1 - kcalPct)
@@ -450,7 +451,6 @@ function MacroPanel({ totals, target, setTarget, onAutoFit, onSave }) {
           Save this meal
         </button>
       </div>
-
     </div>
   )
 }
@@ -467,22 +467,19 @@ function TargetLabel({ l, v }) {
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────
-// recipes / onRecipeAdded kept in signature so page.jsx needs no changes
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) {
   const rowIdRef = useRef(0)
 
-  // Board rows: [{ rowId, ingId, name?, grams }]
-  // ingId is null for placeholder (dressing/sauce) items
   const [rows,          setRows]          = useState([])
   const [mealName,      setMealName]      = useState("My meal")
   const [target,        setTarget]        = useState({ kcal: 700, protein: 55 })
   const [ingSearch,     setIngSearch]     = useState('')
+  const [activeIngTab,  setActiveIngTab]  = useState('protein')
   const [dragName,      setDragName]      = useState(null)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [toast,         setToast]         = useState(null)
 
-  // Usage counts — persisted to localStorage as { [ingId]: count }
   const [usage, setUsage] = useState(() => {
     if (typeof window === 'undefined') return {}
     try { return JSON.parse(localStorage.getItem('mb_ingredient_usage') || '{}') }
@@ -498,23 +495,22 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
   const ghostRef = useRef(null)
   const dropRef  = useRef(null)
 
-  // Column data — sorted by usage desc, then alphabetical within equal counts
-  const colData = useMemo(() =>
-    COLS.map(col => ({
-      ...col,
-      items: col.placeholder
-        ? []
-        : ingredients
-            .filter(col.filter)
-            .slice()
-            .sort((a, b) => {
-              const ca = usage[a.id] || 0
-              const cb = usage[b.id] || 0
-              if (cb !== ca) return cb - ca
-              return (a.name || '').localeCompare(b.name || '')
-            }),
-    })),
-  [ingredients, usage])
+  // Active tab config
+  const activeTab = useMemo(() => ING_TABS.find(t => t.id === activeIngTab) || ING_TABS[0], [activeIngTab])
+
+  // Items for the active tab sorted by usage desc then alphabetically
+  const activeTabItems = useMemo(() => {
+    if (!activeTab || activeTab.placeholder) return []
+    return ingredients
+      .filter(activeTab.filter)
+      .slice()
+      .sort((a, b) => {
+        const ca = usage[a.id] || 0
+        const cb = usage[b.id] || 0
+        if (cb !== ca) return cb - ca
+        return (a.name || '').localeCompare(b.name || '')
+      })
+  }, [ingredients, usage, activeTab])
 
   // Ingredient IDs that match the search query
   const matchIds = useMemo(() => {
@@ -528,7 +524,7 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
     return ids
   }, [ingSearch, ingredients])
 
-  // Running meal totals (placeholder rows contribute 0 — macros not yet built)
+  // Running meal totals
   const totals = useMemo(() => {
     let kcal = 0, protein = 0, carbs = 0, fat = 0, fiber = 0
     rows.forEach(row => {
@@ -546,11 +542,9 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
     }
   }, [rows, ingredients])
 
-  // Add an ingredient or placeholder to the board
   const addItem = useCallback((item) => {
     rowIdRef.current += 1
     if (item.id === null) {
-      // Placeholder dressing/sauce — no ingId, name stored directly
       setRows(prev => [...prev, { rowId: rowIdRef.current, ingId: null, name: item.name, grams: 100 }])
     } else {
       setRows(prev => [...prev, { rowId: rowIdRef.current, ingId: item.id, name: null, grams: item.ref || 100 }])
@@ -562,7 +556,7 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
     }
   }, [])
 
-  // Pointer drag: ingredient/placeholder tab → board drop zone (click also adds)
+  // Pointer drag: ingredient → board drop zone
   useEffect(() => {
     const overDrop = (e) => {
       const el = dropRef.current; if (!el) return false
@@ -633,7 +627,6 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
     if (typeof onRecipeAdded === 'function') onRecipeAdded(insertedRecord)
   }
 
-  // Responsive breakpoint
   const [narrow, setNarrow] = useState(typeof window !== "undefined" ? window.innerWidth < 1100 : false)
   useEffect(() => {
     const check = () => setNarrow(window.innerWidth < 1100)
@@ -643,12 +636,7 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
 
   const gridStyle = narrow
     ? { display: "flex", flexDirection: "column", gap: 16 }
-    : {
-        display: "grid",
-        gridTemplateColumns: "2fr 3fr",
-        gap: 16,
-        alignItems: "start",
-      }
+    : { display: "grid", gridTemplateColumns: "2fr 3fr", gap: 16, alignItems: "start" }
 
   const cardBase = {
     background: C.surface,
@@ -664,9 +652,14 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .mb-ing-col::-webkit-scrollbar       { width: 4px; }
-        .mb-ing-col::-webkit-scrollbar-track { background: transparent; }
-        .mb-ing-col::-webkit-scrollbar-thumb { background: #d4d7df; border-radius: 4px; }
+        @keyframes mbShimmer {
+          0%   { background-position: -200% 0; }
+          100% { background-position:  200% 0; }
+        }
+        .mb-tab-bar::-webkit-scrollbar { display: none; }
+        .mb-photo-grid::-webkit-scrollbar { width: 4px; }
+        .mb-photo-grid::-webkit-scrollbar-track { background: transparent; }
+        .mb-photo-grid::-webkit-scrollbar-thumb { background: #d4d7df; border-radius: 4px; }
       `}</style>
 
       <div style={{ maxWidth: 1420, margin: "0 auto", padding: "20px 20px 0" }}>
@@ -719,7 +712,7 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
                 }}>
                   <span style={{ fontSize: 38 }}>🍳</span>
                   <span style={{ fontWeight: 700, fontSize: 17, color: "#6b7280" }}>
-                    Click or drag ingredients from the columns
+                    Click an ingredient card to add it
                   </span>
                 </div>
               ) : (
@@ -746,7 +739,6 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
               onSave={saveMeal}
             />
 
-            {/* Reset favourites — barely visible, appears on hover */}
             <div style={{ minHeight: 22 }}>
               {Object.keys(usage).length > 0 && (
                 <button
@@ -766,83 +758,92 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
             </div>
           </div>
 
-          {/* ── RIGHT: 5-column ingredient board ── */}
-          <section style={{ ...cardBase, padding: 16, display: "flex", flexDirection: "column" }}>
-            {/* Search bar */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              border: `1px solid ${C.line}`, borderRadius: 12,
-              padding: '8px 12px', background: '#f3f4f7', marginBottom: 12,
+          {/* ── RIGHT: tabbed photo ingredient board ── */}
+          <section style={{ ...cardBase, padding: 0, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 500 }}>
+
+            {/* Tab bar */}
+            <div className="mb-tab-bar" style={{
+              display: 'flex',
+              borderBottom: `2px solid ${C.line}`,
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              padding: '0 10px',
+              flexShrink: 0,
             }}>
-              <span style={{ fontSize: 14, color: C.sub, flexShrink: 0 }}>🔍</span>
-              <input
-                value={ingSearch}
-                onChange={e => setIngSearch(e.target.value)}
-                placeholder="Search ingredients across all columns…"
-                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 12, color: C.ink, outline: 'none' }}
-              />
-              {ingSearch && (
+              {ING_TABS.map(tab => (
                 <button
-                  onClick={() => setIngSearch('')}
-                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.sub, fontSize: 18, lineHeight: 1, padding: 0 }}
-                >×</button>
-              )}
+                  key={tab.id}
+                  onClick={() => setActiveIngTab(tab.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '11px 10px',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: activeIngTab === tab.id ? 700 : 400,
+                    color: activeIngTab === tab.id ? C.primary : C.sub,
+                    borderBottom: activeIngTab === tab.id ? `2px solid ${C.primary}` : '2px solid transparent',
+                    marginBottom: -2,
+                    whiteSpace: 'nowrap',
+                    transition: 'color .15s',
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={e => { if (activeIngTab !== tab.id) e.currentTarget.style.color = C.ink }}
+                  onMouseLeave={e => { if (activeIngTab !== tab.id) e.currentTarget.style.color = C.sub }}
+                >
+                  {tab.emoji} {tab.label}
+                </button>
+              ))}
             </div>
 
-            {/* 5 ingredient columns — min 120px each so names don't wrap */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: narrow ? '1fr 1fr' : 'minmax(120px,1.3fr) repeat(4, minmax(120px,1fr))',
-              gap: 10,
-              alignItems: 'start',
-            }}>
-              {colData.map(col => (
-                <div key={col.id}>
-                  <div style={{
-                    fontSize: 9, fontWeight: 800, color: col.accent,
-                    textTransform: 'uppercase', letterSpacing: '.08em',
-                    marginBottom: 8, lineHeight: 1.35, padding: '0 2px',
-                  }}>
-                    {col.label}
-                  </div>
-                  <div className="mb-ing-col" style={{ maxHeight: 72 + 'vh', overflowY: 'auto', paddingRight: 2 }}>
-                    {col.placeholder
-                      ? PLACEHOLDER_TABS.map((name, i) => (
-                          <PlaceholderTab
-                            key={i}
-                            name={name}
-                            onPointerDown={e => {
-                              e.preventDefault()
-                              dragRef.current = {
-                                item: { id: null, name },
-                                x0: e.clientX, y0: e.clientY,
-                                el: e.currentTarget, active: false,
-                              }
-                            }}
-                          />
-                        ))
-                      : col.items.map(ing => (
-                          <IngredientTab
-                            key={ing.id}
-                            ing={ing}
-                            col={col}
-                            isMatch={matchIds ? matchIds.has(ing.id) : true}
-                            hasSearch={!!ingSearch}
-                            usageCount={usage[ing.id] || 0}
-                            onPointerDown={e => {
-                              if (matchIds && !matchIds.has(ing.id)) return
-                              e.preventDefault()
-                              dragRef.current = {
-                                item: ing,
-                                x0: e.clientX, y0: e.clientY,
-                                el: e.currentTarget, active: false,
-                              }
-                            }}
-                          />
-                        ))}
-                  </div>
-                </div>
-              ))}
+            <div style={{ padding: '10px 12px 12px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* Search bar */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                border: `1px solid ${C.line}`, borderRadius: 12,
+                padding: '8px 12px', background: '#f3f4f7', marginBottom: 10,
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 14, color: C.sub, flexShrink: 0 }}>🔍</span>
+                <input
+                  value={ingSearch}
+                  onChange={e => setIngSearch(e.target.value)}
+                  placeholder="Search ingredients…"
+                  style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 12, color: C.ink, outline: 'none' }}
+                />
+                {ingSearch && (
+                  <button
+                    onClick={() => setIngSearch('')}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.sub, fontSize: 18, lineHeight: 1, padding: 0 }}
+                  >×</button>
+                )}
+              </div>
+
+              {/* Photo grid */}
+              <div className="mb-photo-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${activeTab.cols}, 1fr)`,
+                gap: 8,
+                overflowY: 'auto',
+                flex: 1,
+                alignContent: 'start',
+              }}>
+                {activeTab.placeholder
+                  ? PLACEHOLDER_TABS.map((name, i) => (
+                      <PlaceholderPhotoCard key={i} name={name} accent={activeTab.accent} accentLight={activeTab.accentLight} />
+                    ))
+                  : activeTabItems.map(ing => (
+                      <IngPhotoCard
+                        key={ing.id}
+                        ing={ing}
+                        tab={activeTab}
+                        onAdd={addItem}
+                        isMatch={matchIds ? matchIds.has(ing.id) : true}
+                        hasSearch={!!ingSearch}
+                      />
+                    ))
+                }
+              </div>
             </div>
           </section>
         </div>

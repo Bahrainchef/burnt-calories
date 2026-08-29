@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import MealBuilderTab from "./MealBuilderTab";
+import IngredientsTab from "./IngredientsTab";
 
 const parseArr = (f) => {
   if (Array.isArray(f)) return f
@@ -1237,9 +1238,6 @@ export default function BurntCaloriesApp() {
   const [recGoal,setRecGoal]  = useState("all");
   const [recSearch,setRecSearch] = useState("");
   const [recTag,setRecTag]    = useState("");
-  const [ingSearch,setIngSearch] = useState("");
-  const [ingCat,setIngCat]    = useState("All");
-  const [ingSub,setIngSub]    = useState("All");
   const [ingredients,setIngredients] = useState([]);
   const [clients,setClients] = useState([
     {id:1,name:"Paul Britton",  age:40,weight:90, height:180,gender:"male",  goal:"fat_loss",    activityLevel:"very"},
@@ -1440,17 +1438,6 @@ export default function BurntCaloriesApp() {
     return base;
   },[recipes,selCategory,recSearch]);
 
-  const ingCats = useMemo(()=>["All",...new Set(ingredients.map(i=>i.cat))],[ingredients]);
-  const ingSubs = useMemo(()=>ingCat==="All"?["All"]:["All",...new Set(ingredients.filter(i=>i.cat===ingCat).map(i=>i.sub))],[ingCat,ingredients]);
-  const filteredIngs = useMemo(()=>{
-    const q=ingSearch.toLowerCase();
-    return ingredients.filter(i=>{
-      const mc=ingCat==="All"||i.cat===ingCat;
-      const ms=ingSub==="All"||i.sub===ingSub;
-      const mt=!q||(i.name||'').toLowerCase().includes(q)||(i.sub||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q);
-      return mc&&ms&&mt;
-    });
-  },[ingCat,ingSub,ingSearch]);
 
   const liveCalcMacros = useMemo(()=>calcMacros(calcDraft),[calcDraft]);
 
@@ -1913,29 +1900,8 @@ export default function BurntCaloriesApp() {
   if(tab==="ingredients") return (
     <div style={{minHeight:"100vh",background:"var(--color-background-tertiary)"}}>
       {Nav}{wrap(<>
-        <Hdr title="Master ingredient library" sub={`${ingredients.length} ingredients · calories, macros, fibre · 5 health benefits each · Burnt Calories`}/>
-        <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-          <input value={ingSearch} onChange={e=>setIngSearch(e.target.value)} placeholder="Search ingredients or subcategories…" style={{flex:1,minWidth:200}}/>
-          <select value={ingCat} onChange={e=>{setIngCat(e.target.value);setIngSub("All");}} style={{minWidth:150}}>{ingCats.map(c=><option key={c}>{c}</option>)}</select>
-          {ingSubs.length>2&&<select value={ingSub} onChange={e=>setIngSub(e.target.value)} style={{minWidth:150}}>{ingSubs.map(s=><option key={s}>{s}</option>)}</select>}
-        </div>
-        <div style={{fontSize:11,color:"var(--color-text-tertiary)",marginBottom:12}}>{filteredIngs.length} ingredients</div>
-        <div style={{...crd,padding:0,overflow:"clip"}}>
-          <div style={{display:"grid",gridTemplateColumns:"2.2fr 0.55fr 0.65fr 0.55fr 0.55fr 0.55fr 2.8fr",gap:12,padding:"10px 16px",background:"var(--color-background-primary)",fontSize:9,color:"var(--color-text-tertiary)",textTransform:"uppercase",letterSpacing:"0.08em",position:"sticky",top:isMobile?96:108,zIndex:10,borderBottom:"2px solid #c8c8c8"}}>
-            <span>Ingredient</span><span>kcal</span><span>Protein</span><span>Carbs</span><span>Fat</span><span>Fibre</span><span>Top benefits</span>
-          </div>
-          {filteredIngs.map((ing,i)=>(
-            <div key={ing.id} style={{display:"grid",gridTemplateColumns:"2.2fr 0.55fr 0.65fr 0.55fr 0.55fr 0.55fr 2.8fr",gap:12,padding:"10px 16px",borderTop:tk.bd,fontSize:11,alignItems:"center",background:i%2?"var(--color-background-secondary)":"transparent"}}>
-              <div><div style={{fontWeight:500}}>{ing.name}</div><div style={{display:"flex",gap:4,marginTop:3}}><CatBadge cat={ing.cat}/><span style={{fontSize:9,color:"var(--color-text-tertiary)"}}>{ing.ref}g ref</span></div></div>
-              <span style={{fontWeight:500,color:tk.teal}}>{ing.cal}</span>
-              <span style={{color:tk.blue}}>{ing.p}g</span>
-              <span style={{color:tk.green}}>{ing.c}g</span>
-              <span style={{color:tk.coral}}>{ing.f}g</span>
-              <span style={{color:"var(--color-text-secondary)"}}>{ing.fi}g</span>
-              <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{ing.benefits.slice(0,2).map((b,bi)=><span key={bi} style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:"var(--color-background-success)",color:"var(--color-text-success)"}}>{b}</span>)}</div>
-            </div>
-          ))}
-        </div>
+        <Hdr title="Ingredient library" sub={`${ingredients.length} ingredients · photos, macros & benefits · Burnt Calories`}/>
+        <IngredientsTab ingredients={ingredients}/>
       </>)}
     </div>
   );
