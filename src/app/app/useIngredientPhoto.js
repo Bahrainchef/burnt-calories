@@ -1,10 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 
-const photoCache    = {}
-const pending       = {}
-const REQUEST_QUEUE = []
-let   queueRunning  = false
+const photoCache = {}
+const pending    = {}
 
 const QUERY_OVERRIDES = {
   'Avocado':              'avocado fresh cut halved',
@@ -38,7 +36,7 @@ const QUERY_OVERRIDES = {
   'Ras El Hanout':        'ras el hanout spice blend',
   'Garam Masala':         'garam masala spice powder',
   'Curry Powder':         'curry powder spice yellow',
-  'Za\'atar':             'zaatar herb spice mix',
+  "Za'atar":              'zaatar herb spice mix',
   'Sumac':                'sumac spice powder red',
   'Saffron':              'saffron threads spice',
   'Cardamom':             'cardamom pods green spice',
@@ -49,48 +47,34 @@ const QUERY_OVERRIDES = {
 
 function buildQuery(name, cat, sub) {
   if (QUERY_OVERRIDES[name]) return QUERY_OVERRIDES[name]
-  if (cat === 'Protein')                                            return `${name} raw uncooked`
-  if (cat === 'Spice' || (cat === 'Other' && sub === 'Spices'))    return `${name} spice powder`
-  if (cat === 'Herb')                                              return `${name} fresh herb`
+  if (cat === 'Protein')                                              return `${name} raw uncooked`
+  if (cat === 'Spice' || (cat === 'Other' && sub === 'Spices'))      return `${name} spice powder`
+  if (cat === 'Herb')                                                return `${name} fresh herb`
   if (cat === 'Vegetable' && (sub === 'Herbs' || sub === 'Aromatics')) return `${name} fresh herb`
-  if (cat === 'Vegetable')                                         return `${name} fresh isolated`
-  if (cat === 'Fruit')                                             return `${name} fresh isolated`
-  if (cat === 'Fat' && sub === 'Oils')                             return `${name} bottle`
+  if (cat === 'Vegetable')                                           return `${name} fresh isolated`
+  if (cat === 'Fruit')                                               return `${name} fresh isolated`
+  if (cat === 'Fat' && sub === 'Oils')                               return `${name} bottle`
   if (cat === 'Other' && (sub === 'Condiments' || sub === 'Sauces')) return `${name} bottle`
-  if (cat === 'Carbohydrate')                                      return `${name} dry uncooked`
+  if (cat === 'Carbohydrate')                                        return `${name} dry uncooked`
   return `${name} raw ingredient isolated white background`
-}
-
-async function drainQueue() {
-  if (queueRunning) return
-  queueRunning = true
-  while (REQUEST_QUEUE.length) {
-    const batch = REQUEST_QUEUE.splice(0, 10)
-    await Promise.all(batch.map(fn => fn()))
-    if (REQUEST_QUEUE.length) await new Promise(r => setTimeout(r, 100))
-  }
-  queueRunning = false
 }
 
 async function fetchPhoto(name, cat, sub) {
   if (name in photoCache) return photoCache[name]
   if (name in pending)    return pending[name]
 
-  const promise = new Promise(resolve => {
-    REQUEST_QUEUE.push(async () => {
-      const q = buildQuery(name, cat, sub)
-      try {
-        const res  = await fetch(`/api/pexels?q=${encodeURIComponent(q)}`)
-        const data = await res.json()
-        photoCache[name] = data.url ?? null
-      } catch {
-        photoCache[name] = null
-      }
-      delete pending[name]
-      resolve(photoCache[name])
-    })
-    drainQueue()
-  })
+  const q = buildQuery(name, cat, sub)
+  const promise = (async () => {
+    try {
+      const res  = await fetch(`/api/pexels?q=${encodeURIComponent(q)}`)
+      const data = await res.json()
+      photoCache[name] = data.url ?? null
+    } catch {
+      photoCache[name] = null
+    }
+    delete pending[name]
+    return photoCache[name]
+  })()
 
   pending[name] = promise
   return promise
