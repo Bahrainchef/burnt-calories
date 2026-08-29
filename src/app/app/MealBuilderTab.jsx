@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
-import { useIngredientPhoto } from "./useIngredientPhoto"
 
 const C = {
   bg:        "#eef0f4",
@@ -70,10 +69,10 @@ function ingMacros(ing, amt) {
 
 // ── IngPhotoCard ──────────────────────────────────────────────────────────────
 function IngPhotoCard({ ing, tab, onAdd, isMatch, hasSearch }) {
-  const photoUrl = useIngredientPhoto(ing.name)
   const [flash,   setFlash]   = useState(false)
-  const dimmed = hasSearch && !isMatch
-  const cal    = Math.round((ing.cal || 0) * (100 / (ing.ref || 100)))
+  const [hovered, setHovered] = useState(false)
+  const dimmed  = hasSearch && !isMatch
+  const cal     = Math.round((ing.cal || 0) * (100 / (ing.ref || 100)))
   const initial = (ing.name || '?')[0].toUpperCase()
 
   const handleClick = () => {
@@ -83,68 +82,47 @@ function IngPhotoCard({ ing, tab, onAdd, isMatch, hasSearch }) {
     onAdd(ing)
   }
 
+  const scale = flash ? 0.90 : hovered ? 1.03 : 1
+  const shadow = flash
+    ? `0 0 0 3px ${tab.accent}`
+    : hovered ? '0 8px 24px rgba(40,44,55,.18)' : '0 2px 8px rgba(40,44,55,.12)'
+
   return (
     <div
       onClick={handleClick}
+      onMouseEnter={() => { if (!dimmed) setHovered(true) }}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        cursor:      dimmed ? 'default' : 'pointer',
-        borderRadius: 12,
-        overflow:    'hidden',
-        background:  '#fff',
-        boxShadow:   flash ? `0 0 0 3px ${tab.accent}` : '0 2px 8px rgba(40,44,55,.12)',
-        transform:   flash ? 'scale(0.90)' : 'scale(1)',
-        transition:  'transform 0.22s ease, box-shadow 0.18s',
-        userSelect:  'none',
-        opacity:     dimmed ? 0.25 : 1,
+        cursor:        dimmed ? 'default' : 'pointer',
+        borderRadius:  12,
+        overflow:      'hidden',
+        background:    '#fff',
+        boxShadow:     shadow,
+        transform:     `scale(${scale})`,
+        transition:    'transform 0.15s ease, box-shadow 0.15s',
+        userSelect:    'none',
+        opacity:       dimmed ? 0.25 : 1,
         pointerEvents: dimmed ? 'none' : 'auto',
       }}
     >
-      {/* Square photo area — paddingTop 100% creates a square */}
-      <div style={{ width: '100%', paddingTop: '100%', position: 'relative', overflow: 'hidden', background: tab.accentLight }}>
-        {/* Loading shimmer */}
-        {photoUrl === undefined && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: `linear-gradient(90deg, ${tab.accentLight} 0%, #f0f2f5 50%, ${tab.accentLight} 100%)`,
-            backgroundSize: '200% 100%',
-            animation: 'mbShimmer 1.5s ease-in-out infinite',
-          }} />
-        )}
-
-        {/* Loaded photo */}
-        {photoUrl && (
-          <img
-            src={photoUrl}
-            alt={ing.name}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        )}
-
-        {/* Fallback placeholder — colored tile with first letter */}
-        {photoUrl === null && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            background: tab.accentLight,
-            gap: 4,
-          }}>
-            <span style={{ fontSize: '2rem', lineHeight: 1 }}>
-              {tab.emoji}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: tab.accent }}>
-              {initial}
-            </span>
-          </div>
-        )}
+      {/* Square photo area */}
+      <div style={{ width: '100%', paddingTop: '100%', position: 'relative', overflow: 'hidden', background: tab.accentLight, borderRadius: '12px 12px 0 0' }}>
+        {ing.photo_url
+          ? <img src={ing.photo_url} alt={ing.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <span style={{ fontSize: '2rem', lineHeight: 1 }}>{tab.emoji}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: tab.accent }}>{initial}</span>
+            </div>
+        }
       </div>
 
       {/* Name + cal */}
-      <div style={{ padding: '6px 7px 8px' }}>
-        <div style={{ fontWeight: 700, fontSize: 12, color: C.ink, lineHeight: 1.25, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ padding: '8px 10px' }}>
+        <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a', lineHeight: 1.25, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {ing.name}
         </div>
-        <div style={{ fontSize: 11, color: C.sub, fontWeight: 500 }}>
-          {cal} cal / 100g
+        <div style={{ fontSize: 11, color: '#888' }}>
+          {cal} cal/100g
         </div>
       </div>
     </div>

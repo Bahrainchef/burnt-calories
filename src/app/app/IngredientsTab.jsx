@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { useIngredientPhoto } from './useIngredientPhoto'
+import Link from 'next/link'
 
 const CAT_TABS = [
   { id: 'all',     label: 'All',               filter: () => true,                    cols: 5 },
@@ -21,15 +21,19 @@ const CAT_LIGHT = {
   Fruit: '#FDEEF4', Fat: '#FDEEE6', Dairy: '#EEEDFE',
   Herb: '#F5F0FF', Spice: '#F5F0FF', Other: '#F1EFE8',
 }
+const CAT_EMOJI = {
+  Protein: '🥩', Carbohydrate: '🌾', Vegetable: '🥦',
+  Fruit: '🍓', Spice: '🌶️', Herb: '🌿', Fat: '🫒', Dairy: '🧀', Other: '🫙',
+}
 
 // ── IngCard ──────────────────────────────────────────────────────────────────
 function IngCard({ ing, catTab, onSelect }) {
-  const photoUrl = useIngredientPhoto(ing.name)
   const [animating, setAnimating] = useState(false)
+  const [hovered,   setHovered]   = useState(false)
   const accent      = catTab?.accent      || CAT_ACCENT[ing.cat] || '#888'
   const accentLight = catTab?.accentLight || CAT_LIGHT[ing.cat]  || '#f5f5f5'
+  const emoji       = CAT_EMOJI[ing.cat] || '🍽️'
   const cal         = Math.round((ing.cal || 0) * (100 / (ing.ref || 100)))
-  const initial     = (ing.name || '?')[0].toUpperCase()
 
   const handleClick = () => {
     setAnimating(true)
@@ -37,45 +41,36 @@ function IngCard({ ing, catTab, onSelect }) {
     onSelect(ing)
   }
 
+  const scale  = animating ? 0.88 : hovered ? 1.03 : 1
+  const shadow = hovered ? '0 8px 24px rgba(40,44,55,.18)' : '0 2px 8px rgba(40,44,55,.10)'
+
   return (
     <div
       onClick={handleClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        cursor: 'pointer',
-        borderRadius: 12,
-        overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(40,44,55,.10)',
-        background: '#fff',
-        transform: animating ? 'scale(0.88)' : 'scale(1)',
-        transition: 'transform 0.22s ease',
+        cursor: 'pointer', borderRadius: 12, overflow: 'hidden',
+        boxShadow: shadow, background: '#fff',
+        transform: `scale(${scale})`,
+        transition: 'transform 0.15s ease, box-shadow 0.15s',
         userSelect: 'none',
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(40,44,55,.18)' }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(40,44,55,.10)' }}
     >
-      <div style={{ width: '100%', paddingTop: '100%', position: 'relative', overflow: 'hidden', background: accentLight }}>
-        {photoUrl === undefined && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: `linear-gradient(90deg,${accentLight} 0%,#f5f6f8 50%,${accentLight} 100%)`,
-            backgroundSize: '200% 100%',
-            animation: 'ingShimmer 1.4s ease-in-out infinite',
-          }}/>
-        )}
-        {photoUrl && (
-          <img src={photoUrl} alt={ing.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}/>
-        )}
-        {photoUrl === null && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', color: accent, fontWeight: 700, background: accentLight }}>
-            {initial}
-          </div>
-        )}
+      <div style={{ width: '100%', paddingTop: '100%', position: 'relative', overflow: 'hidden', background: accentLight, borderRadius: '12px 12px 0 0' }}>
+        {ing.photo_url
+          ? <img src={ing.photo_url} alt={ing.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}/>
+          : <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, background: accentLight }}>
+              <span style={{ fontSize: '1.8rem' }}>{emoji}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: accent }}>{(ing.name || '?')[0]}</span>
+            </div>
+        }
       </div>
-      <div style={{ padding: '6px 8px 8px' }}>
-        <div style={{ fontWeight: 700, fontSize: 12, color: '#2b303a', lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ padding: '8px 10px' }}>
+        <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a', lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {ing.name}
         </div>
-        <div style={{ fontSize: 11, color: '#7c8490' }}>{cal} cal/100g</div>
+        <div style={{ fontSize: 11, color: '#888' }}>{cal} cal/100g</div>
       </div>
     </div>
   )
@@ -83,16 +78,15 @@ function IngCard({ ing, catTab, onSelect }) {
 
 // ── DetailModal ───────────────────────────────────────────────────────────────
 function DetailModal({ ing, onClose }) {
-  const photoUrl    = useIngredientPhoto(ing.name)
   const accent      = CAT_ACCENT[ing.cat] || '#888'
   const accentLight = CAT_LIGHT[ing.cat]  || '#f5f5f5'
+  const emoji       = CAT_EMOJI[ing.cat]  || '🍽️'
   const r   = 100 / (ing.ref || 100)
   const cal = Math.round((ing.cal || 0) * r)
   const p   = Math.round((ing.p   || 0) * r)
   const c   = Math.round((ing.c   || 0) * r)
   const f   = Math.round((ing.f   || 0) * r)
   const fi  = Math.round((ing.fi  || 0) * r)
-  const initial = (ing.name || '?')[0].toUpperCase()
 
   return (
     <div
@@ -101,25 +95,12 @@ function DetailModal({ ing, onClose }) {
     >
       <div style={{ background: '#fff', borderRadius: 20, maxWidth: 440, width: '100%', overflow: 'hidden', boxShadow: '0 32px 64px -24px rgba(0,0,0,0.4)' }}>
         {/* Photo area */}
-        <div style={{ height: 220, background: accentLight, position: 'relative', overflow: 'hidden' }}>
-          {photoUrl === undefined && (
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: `linear-gradient(90deg,${accentLight} 0%,#f5f6f8 50%,${accentLight} 100%)`,
-              backgroundSize: '200% 100%',
-              animation: 'ingShimmer 1.4s ease-in-out infinite',
-            }}/>
-          )}
-          {photoUrl && <img src={photoUrl} alt={ing.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>}
-          {photoUrl === null && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 72, color: accent, fontWeight: 700 }}>
-              {initial}
-            </div>
-          )}
-          <button
-            onClick={onClose}
-            style={{ position: 'absolute', top: 12, right: 12, width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.35)', color: '#fff', cursor: 'pointer', fontSize: 20, lineHeight: '34px', textAlign: 'center', padding: 0 }}
-          >×</button>
+        <div style={{ height: 220, background: accentLight, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {ing.photo_url
+            ? <img src={ing.photo_url} alt={ing.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+            : <span style={{ fontSize: 72 }}>{emoji}</span>
+          }
+          <button onClick={onClose} style={{ position: 'absolute', top: 12, right: 12, width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.35)', color: '#fff', cursor: 'pointer', fontSize: 20, lineHeight: '34px', textAlign: 'center', padding: 0 }}>×</button>
         </div>
 
         {/* Content */}
@@ -130,7 +111,6 @@ function DetailModal({ ing, onClose }) {
             <span style={{ fontSize: 11, color: '#9aa0ab' }}>per 100g</span>
           </div>
 
-          {/* Macros row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 18 }}>
             {[['Cal', cal, '#E8621A'], ['Protein', `${p}g`, '#4A7C3F'], ['Carbs', `${c}g`, '#C47C0A'], ['Fat', `${f}g`, '#E8621A'], ['Fiber', `${fi}g`, '#0bb3a6']].map(([l, v, col]) => (
               <div key={l} style={{ background: '#f8f9fa', borderRadius: 10, padding: '9px 4px', textAlign: 'center' }}>
@@ -140,7 +120,6 @@ function DetailModal({ ing, onClose }) {
             ))}
           </div>
 
-          {/* Benefits */}
           {(ing.benefits || []).length > 0 && (
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#7c8490', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.07em' }}>Benefits</div>
@@ -180,26 +159,25 @@ export default function IngredientsTab({ ingredients }) {
 
   return (
     <>
-      <style>{`
-        @keyframes ingShimmer {
-          0%   { background-position: -200% 0; }
-          100% { background-position:  200% 0; }
-        }
-        .ing-tab-bar::-webkit-scrollbar { display: none; }
-      `}</style>
+      <style>{`.ing-tab-bar::-webkit-scrollbar { display: none; }`}</style>
 
-      {/* Search */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #e6e8ee', borderRadius: 14, padding: '10px 14px', background: '#f3f4f7', marginBottom: 14 }}>
-        <span style={{ fontSize: 16, color: '#7c8490', flexShrink: 0 }}>🔍</span>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search ingredients…"
-          style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 13, color: '#2b303a', outline: 'none' }}
-        />
-        {search && (
-          <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#7c8490', fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
-        )}
+      {/* Search + Manage photos link */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #e6e8ee', borderRadius: 14, padding: '10px 14px', background: '#f3f4f7' }}>
+          <span style={{ fontSize: 16, color: '#7c8490', flexShrink: 0 }}>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search ingredients…"
+            style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 13, color: '#2b303a', outline: 'none' }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#7c8490', fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
+          )}
+        </div>
+        <Link href="/app/admin/photos" style={{ fontSize: 12, color: '#7c8490', textDecoration: 'none', whiteSpace: 'nowrap', padding: '6px 12px', border: '1px solid #e6e8ee', borderRadius: 10, background: '#fff' }}>
+          ✏️ Manage photos
+        </Link>
       </div>
 
       {/* Category tabs */}
@@ -209,18 +187,11 @@ export default function IngredientsTab({ ingredients }) {
             key={t.id}
             onClick={() => setCatTabId(t.id)}
             style={{
-              background: 'none',
-              border: 'none',
-              padding: '10px 18px',
-              cursor: 'pointer',
-              fontSize: 13,
+              background: 'none', border: 'none', padding: '10px 18px', cursor: 'pointer', fontSize: 13,
               fontWeight: catTabId === t.id ? 700 : 400,
               color: catTabId === t.id ? '#2D5A27' : '#7c8490',
               borderBottom: catTabId === t.id ? '2px solid #2D5A27' : '2px solid transparent',
-              marginBottom: -2,
-              whiteSpace: 'nowrap',
-              transition: 'color .15s',
-              flexShrink: 0,
+              marginBottom: -2, whiteSpace: 'nowrap', transition: 'color .15s', flexShrink: 0,
             }}
             onMouseEnter={e => { if (catTabId !== t.id) e.currentTarget.style.color = '#2b303a' }}
             onMouseLeave={e => { if (catTabId !== t.id) e.currentTarget.style.color = '#7c8490' }}
@@ -245,7 +216,6 @@ export default function IngredientsTab({ ingredients }) {
         ))}
       </div>
 
-      {/* Detail modal */}
       {selIng && <DetailModal ing={selIng} onClose={() => setSelIng(null)} />}
     </>
   )
