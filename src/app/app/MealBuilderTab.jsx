@@ -28,6 +28,7 @@ const ING_TABS = [
   { id: 'protein',    label: 'Proteins',                               emoji: '🥩', filter: i => i.cat === 'Protein',      cols: 3, accent: '#C4530A', accentLight: '#FFF0E8' },
   { id: 'carbs',      label: 'Carbs & Starches',                       emoji: '🌾', filter: i => i.cat === 'Carbohydrate', cols: 4, accent: '#C47C0A', accentLight: '#FDF3DC' },
   { id: 'vegetables', label: 'Vegetables',                              emoji: '🥦', filter: i => i.cat === 'Vegetable',    cols: 5, accent: '#2D5A27', accentLight: '#EAF3E6' },
+  { id: 'spices',     label: 'Spices & Herbs',                          emoji: '🌿', filter: i => i.cat === 'Spice' || i.cat === 'Herb' || (i.cat === 'Other' && i.sub === 'Spices'), cols: 4, accent: '#8B5E3C', accentLight: '#FDF5EE' },
   { id: 'fruits',     label: 'Fruits',                                  emoji: '🍓', filter: i => i.cat === 'Fruit',        cols: 4, accent: '#C0446A', accentLight: '#FDEEF4' },
   { id: 'dressings',  label: 'Dressings · Sauces · Marinades · Pickles', emoji: '🫙', filter: null, placeholder: true,     cols: 3, accent: '#7F77DD', accentLight: '#EEEDFE' },
 ]
@@ -69,7 +70,7 @@ function ingMacros(ing, amt) {
 
 // ── IngPhotoCard ──────────────────────────────────────────────────────────────
 function IngPhotoCard({ ing, tab, onAdd, isMatch, hasSearch }) {
-  const photoUrl = useIngredientPhoto(ing.name)
+  const photoUrl = useIngredientPhoto(ing.name, ing.cat, ing.sub)
   const [flash,   setFlash]   = useState(false)
   const dimmed = hasSearch && !isMatch
   const cal    = Math.round((ing.cal || 0) * (100 / (ing.ref || 100)))
@@ -414,8 +415,14 @@ export default function MealBuilderTab({ recipes, ingredients, onRecipeAdded }) 
   // Sorted items for the active tab
   const activeTabItems = useMemo(() => {
     if (!activeTab || activeTab.placeholder) return []
+    const seen = new Set()
     return ingredients
-      .filter(activeTab.filter)
+      .filter(i => {
+        if (!activeTab.filter(i)) return false
+        if (seen.has(i.name)) return false
+        seen.add(i.name)
+        return true
+      })
       .slice()
       .sort((a, b) => {
         const ca = usage[a.id] || 0

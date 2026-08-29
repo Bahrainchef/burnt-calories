@@ -3,27 +3,28 @@ import { useState, useMemo } from 'react'
 import { useIngredientPhoto } from './useIngredientPhoto'
 
 const CAT_TABS = [
-  { id: 'all',     label: 'All',           filter: () => true,                    cols: 5 },
-  { id: 'protein', label: '🥩 Proteins',   filter: i => i.cat === 'Protein',      cols: 3, accent: '#C4530A', accentLight: '#FFF0E8' },
-  { id: 'carbs',   label: '🌾 Carbs',      filter: i => i.cat === 'Carbohydrate', cols: 4, accent: '#C47C0A', accentLight: '#FDF3DC' },
-  { id: 'vegs',    label: '🥦 Vegetables', filter: i => i.cat === 'Vegetable',    cols: 5, accent: '#2D5A27', accentLight: '#EAF3E6' },
-  { id: 'fruits',  label: '🍓 Fruits',     filter: i => i.cat === 'Fruit',        cols: 4, accent: '#C0446A', accentLight: '#FDEEF4' },
+  { id: 'all',     label: 'All',               filter: () => true,                    cols: 5 },
+  { id: 'protein', label: '🥩 Proteins',       filter: i => i.cat === 'Protein',      cols: 3, accent: '#C4530A', accentLight: '#FFF0E8' },
+  { id: 'carbs',   label: '🌾 Carbs',          filter: i => i.cat === 'Carbohydrate', cols: 4, accent: '#C47C0A', accentLight: '#FDF3DC' },
+  { id: 'vegs',    label: '🥦 Vegetables',     filter: i => i.cat === 'Vegetable',    cols: 5, accent: '#2D5A27', accentLight: '#EAF3E6' },
+  { id: 'spices',  label: '🌿 Spices & Herbs', filter: i => i.cat === 'Spice' || i.cat === 'Herb' || (i.cat === 'Other' && i.sub === 'Spices'), cols: 4, accent: '#8B5E3C', accentLight: '#FDF5EE' },
+  { id: 'fruits',  label: '🍓 Fruits',         filter: i => i.cat === 'Fruit',        cols: 4, accent: '#C0446A', accentLight: '#FDEEF4' },
 ]
 
 const CAT_ACCENT = {
   Protein: '#C4530A', Carbohydrate: '#C47C0A', Vegetable: '#2D5A27',
   Fruit: '#C0446A', Fat: '#E8621A', Dairy: '#7F77DD',
-  Herb: '#2D5A27', Spice: '#E24B4A', Other: '#888780',
+  Herb: '#8B5E3C', Spice: '#8B5E3C', Other: '#888780',
 }
 const CAT_LIGHT = {
   Protein: '#FFF0E8', Carbohydrate: '#FDF3DC', Vegetable: '#EAF3E6',
   Fruit: '#FDEEF4', Fat: '#FDEEE6', Dairy: '#EEEDFE',
-  Herb: '#EAF3E6', Spice: '#FEF0F0', Other: '#F1EFE8',
+  Herb: '#FDF5EE', Spice: '#FDF5EE', Other: '#F1EFE8',
 }
 
 // ── IngCard ──────────────────────────────────────────────────────────────────
 function IngCard({ ing, catTab, onSelect }) {
-  const photoUrl = useIngredientPhoto(ing.name)
+  const photoUrl = useIngredientPhoto(ing.name, ing.cat, ing.sub)
   const [animating, setAnimating] = useState(false)
   const accent      = catTab?.accent      || CAT_ACCENT[ing.cat] || '#888'
   const accentLight = catTab?.accentLight || CAT_LIGHT[ing.cat]  || '#f5f5f5'
@@ -82,7 +83,7 @@ function IngCard({ ing, catTab, onSelect }) {
 
 // ── DetailModal ───────────────────────────────────────────────────────────────
 function DetailModal({ ing, onClose }) {
-  const photoUrl    = useIngredientPhoto(ing.name)
+  const photoUrl    = useIngredientPhoto(ing.name, ing.cat, ing.sub)
   const accent      = CAT_ACCENT[ing.cat] || '#888'
   const accentLight = CAT_LIGHT[ing.cat]  || '#f5f5f5'
   const r   = 100 / (ing.ref || 100)
@@ -165,11 +166,15 @@ export default function IngredientsTab({ ingredients }) {
   const catTab = CAT_TABS.find(t => t.id === catTabId) || CAT_TABS[0]
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase()
+    const q    = search.toLowerCase()
+    const seen = new Set()
     return ingredients.filter(i => {
       const matchCat    = catTab.id === 'all' || catTab.filter(i)
       const matchSearch = !q || (i.name || '').toLowerCase().includes(q) || (i.cat || '').toLowerCase().includes(q)
-      return matchCat && matchSearch
+      if (!matchCat || !matchSearch) return false
+      if (seen.has(i.name)) return false
+      seen.add(i.name)
+      return true
     }).sort((a, b) => (a.name || '').localeCompare(b.name || ''))
   }, [ingredients, catTabId, search, catTab])
 
